@@ -236,10 +236,14 @@ eem_set_wavelengths <- function(eem, ex, em){
 #' Extract EEM samples
 #'
 #' @template template_eem
+#'
 #' @param sample Either numeric of character vector. See \code{details} for more
 #'   information.
 #'
 #' @param remove logical. Should EEMs removed (TRUE) or extracted (FALSE).
+#'
+#' @param ignore_case Logical, should sample name case should be ignored (TRUE)
+#'   or not (FALSE). Default is FALSE.
 #'
 #' @details \code{sample} argument can be either numeric or character vector. If
 #'   it is numeric, samples at specified index will be removed.
@@ -247,8 +251,6 @@ eem_set_wavelengths <- function(eem, ex, em){
 #'   If \code{sample} is character, regular expression will be used and all
 #'   sample names that have a partial or complete match with the expression will
 #'   be removed. See \code{examples} for more details.
-#'
-#' @importFrom stringr str_detect
 #'
 #' @examples
 #' folder <- system.file("extdata/cary/eem", package = "eemR")
@@ -270,7 +272,7 @@ eem_set_wavelengths <- function(eem, ex, em){
 #' eem_extract(eems, "^no")
 #'
 #' @export
-eem_extract <- function(eem, sample, remove = FALSE) {
+eem_extract <- function(eem, sample, remove = FALSE, ignore_case = FALSE) {
 
   stopifnot(class(eem) == "eemlist",
             is.character(sample) | is.numeric(sample))
@@ -292,7 +294,9 @@ eem_extract <- function(eem, sample, remove = FALSE) {
   ## Regular expression
   if(is.character(sample)){
 
-    index <- str_detect(sample_names, paste(sample, collapse = "|"))
+    index <- grepl(paste(sample, collapse = "|"),
+                   sample_names,
+                   ignore.case = ignore_case)
 
     eem[xor(index, !remove)] <- NULL
 
@@ -306,4 +310,125 @@ eem_extract <- function(eem, sample, remove = FALSE) {
   }
 
   return(eem)
+}
+
+
+#' The names of an eem or eemlist objects
+#'
+#' @param eem An object of class \code{eem} or \code{eemlist}.
+#'
+#' @return A character vector containing the names of the EEMs.
+#'
+#' @examples
+#' file <- system.file("extdata/cary/eem", "sample1.csv", package = "eemR")
+#' eem <- eem_read(file)
+#'
+#' eem_sample_names(eem)
+#'
+#' @export
+eem_sample_names <- function(eem){
+
+  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"))
+
+  ## It is a list of eems, then call lapply
+  if(any(lapply(eem, class) == "eem")){
+
+    res <- unlist(lapply(eem, eem_sample_names))
+
+    return(res)
+
+  }
+
+  return(eem$sample)
+}
+
+
+#' Set the sample names of an eem or eemlist objects
+#'
+#' @param x An object of class \code{eem} or \code{eemlist}.
+#' @param value A character vector with new sample names. Must be equal
+#'   in length to the number of samples in the \code{eem} or \code{eemlist}.
+#'
+#' @return An \code{eem} or \code{eemlist}.
+#'
+#' @examples
+#' folder <- system.file("extdata/cary/eem", package = "eemR")
+#' eems <- eem_read(folder)
+#'
+#' eem_sample_names(eems)
+#' eem_sample_names(eems) <- c("a", "b", "c")
+#' eem_sample_names(eems)
+#'
+#' @export
+`eem_sample_names<-` <- function(x, value){
+
+
+  stopifnot(all(lapply(x, class) == "eem") | class(x) != "eemlist")
+
+  if(class(x) == "eemlist"){
+
+    stopifnot(length(x) == length(value))
+
+    res <- Map(`eem_sample_names<-`, x[], value)
+
+    class(res) <- "eemlist"
+    return(res)
+  }
+
+  stopifnot(length(value) == 1)
+
+  x$sample = value
+
+  class(x) <- "eem"
+  return(x)
+
+}
+
+#' Bind eem or eemlist
+#'
+#' Function to bind EEMs that have been loaded from different folders or have
+#' been processed differently.
+#'
+#' @param ... One or more object of class \code{eem} or \code{eemlist}.
+#'
+#' @return An object of \code{eemlist}.
+#' @export
+#'
+#' @examples
+#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+#' eem <- eem_read(file)
+#'
+#' eem <- eem_bind(eem, eem)
+eem_bind <- function(...){
+
+  eem <- list(...)
+
+  list_classes <- unlist(lapply(eem, function(x) {class(x)}))
+
+  stopifnot(all(list_classes %in% c("eem", "eemlist")))
+
+  eem <- lapply(eem, my_unlist)
+  eem <- unlist(eem, recursive = FALSE)
+
+  class(eem) <- "eemlist"
+
+  return(eem)
+
+}
+
+my_unlist <- function(x){
+
+  if(class(x) == "eem"){
+
+    x <- list(x)
+
+    class(x) <- "eemlist"
+
+    return(x)
+
+  }else {
+
+    return(x)
+
+  }
 }

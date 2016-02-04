@@ -4,17 +4,18 @@
 #' @param ... One or more object of class \code{eem} or \code{eemlist}.
 #'
 #' @details The function exports EEMs into PARAFAC-ready Matlab \code{.mat} file
-#'   usable by the \href{www.models.life.ku.dk/drEEM}{drEEM} toolbox. A
-#'   structure named \code{OriginalData} is created and contains:
+#'   usable by the \href{www.models.life.ku.dk/drEEM}{drEEM} toolbox.
 #'
-#'   \describe{
-#'    \item{nSample}{The number of eems.}
-#'    \item{nEx}{The number of excitation wavelengths.}
-#'    \item{nEm}{The number of emission wavelengths.}
-#'    \item{Ex}{A vector containing excitation wavelengths.}
-#'    \item{Em}{A vector containing emission wavelengths.}
-#'    \item{X}{A 3D matrix (nSample X nEx X nEm) containing EEMs.}
-#'   }
+#' @return A structure named \code{OriginalData} is created and contains:
+#'
+#'   \describe{ \item{nSample}{The number of eems.} \item{nEx}{The number of
+#'   excitation wavelengths.} \item{nEm}{The number of emission wavelengths.}
+#'   \item{Ex}{A vector containing excitation wavelengths.} \item{Em}{A vector
+#'   containing emission wavelengths.} \item{X}{A 3D matrix (nSample X nEx X
+#'   nEm) containing EEMs.} }
+#'
+#'   \code{sample_name} The list of sample names (i.e. file names) of the
+#'   imported EEMs.
 #'
 #' @export
 #' @examples
@@ -34,8 +35,7 @@ eem_export_matlab <- function(file, ...){
             file.info(dirname(file))$isdir,
             grepl(".mat", basename(file)))
 
-  eem <- lapply(eem, my_unlist)
-  eem <- unlist(eem, recursive = FALSE)
+  eem <- eem_bind(...)
 
   ## Number of eem
   nSample <- length(eem)
@@ -108,17 +108,10 @@ eem_export_matlab <- function(file, ...){
                        Ex = Ex,
                        Em = Em)
 
-  R.matlab::writeMat(file, OriginalData = OriginalData)
+  R.matlab::writeMat(file, OriginalData = OriginalData,
+                     sample_names = eem_sample_names(eem))
 
   message("Successfully exported ", nSample, " EEMs to ", file, ".\n")
 
-}
-
-my_unlist <- function(x){
-  if(class(x) == "eem"){
-    return(list(eem = x))
-  }else {
-    return(x)
-  }
 }
 
