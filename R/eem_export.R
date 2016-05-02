@@ -1,7 +1,7 @@
 #' Export EEMs to Matlab
 #'
 #' @param file The .mat file name where to export the structure.
-#' @param ... One or more object of class \code{eem} or \code{eemlist}.
+#' @param ... One or more object of class \code{eemlist}.
 #'
 #' @details The function exports EEMs into PARAFAC-ready Matlab \code{.mat} file
 #'   usable by the \href{www.models.life.ku.dk/drEEM}{drEEM} toolbox.
@@ -19,8 +19,8 @@
 #'
 #' @export
 #' @examples
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
-#' eem <- eem_read(file)
+#' file <- system.file("extdata/cary/", package = "eemR")
+#' eem <- eem_read(file, recursive = TRUE)
 #'
 #' export_to <- paste(tempfile(), ".mat", sep = "")
 #' eem_export_matlab(export_to, eem)
@@ -109,7 +109,7 @@ eem_export_matlab <- function(file, ...){
                        Em = Em)
 
   R.matlab::writeMat(file, OriginalData = OriginalData,
-                     sample_names = eem_sample_names(eem))
+                     sample_names = eem_names(eem))
 
   message("Successfully exported ", nSample, " EEMs to ", file, ".\n")
 

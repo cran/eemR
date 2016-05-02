@@ -1,16 +1,7 @@
-#' Surface plot of eem
-#'
-#' @param x An object of class \code{eem}.
-#' @param ... Extra arguments for \code{image.plot}.
 #' @importFrom grDevices colorRampPalette
-#' @export
-#' @examples
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
-#' eem <- eem_read(file)
-#'
-#' plot(eem)
+#' @importFrom graphics par plot text
+.plot_eem <- function(x, show_peaks, ...){
 
-plot.eem <- function(x, ...){
 
   jet.colors <- colorRampPalette(c("#00007F",
                                    "blue",
@@ -29,7 +20,21 @@ plot.eem <- function(x, ...){
              xlab = "Excitation (nm.)",
              ylab = "Emission (nm.)",
              legend.lab = "Fluorescence intensity",
-             col = jet.colors(255))
+             col = jet.colors(255),
+             ...)
+
+  if(show_peaks){
+
+    coble_ex_peak <- list(b = 275, t = 275, a = 260, m = 312, c = 350)
+    coble_em_peak <- list(b = 310, t = 340, a = 420, m = 400, c = 450)
+
+    text(coble_ex_peak$b, coble_em_peak$b, "B", font = 2, cex = 1)
+    text(coble_ex_peak$t, coble_em_peak$t, "T", font = 2, cex = 1)
+    text(coble_ex_peak$a, coble_em_peak$a, "A", font = 2, cex = 1)
+    text(coble_ex_peak$m, coble_em_peak$m, "M", font = 2, cex = 1)
+    text(coble_ex_peak$c, coble_em_peak$c, "C", font = 2, cex = 1)
+  }
+
 }
 
 #' Surface plot of eem
@@ -37,18 +42,26 @@ plot.eem <- function(x, ...){
 #' @param x An object of class \code{eemlist}.
 #' @param which An integer representing the index of eem to be plotted.
 #' @param ... Extra arguments for \code{image.plot}.
+#' @param show_peaks Boolean indicating if Cobble's peaks should be displayed on
+#'   the surface plot. Default is FALSE.
+#' @param interactive If \code{TRUE} a Shiny app will start to visualize EEMS.
 #'
 #' @export
 #' @examples
-#' folder <- system.file("extdata/cary/eem/", package = "eemR")
+#' folder <- system.file("extdata/cary/scans_day_1/", package = "eemR")
 #' eem <- eem_read(folder)
 #'
-#' plot(eem, which = 2)
-plot.eemlist <- function(x, which = 1, ...) {
+#' plot(eem, which = 3)
+plot.eemlist <- function(x, which = 1,
+                         interactive = FALSE, show_peaks = FALSE, ...) {
 
   stopifnot(which <= length(x))
 
-  plot.eem(x[[which]])
+  if(interactive){
+    .plot_shiny(x)
+  }else{
+    .plot_eem(x[[which]], show_peaks, ...)
+  }
 
 }
 
@@ -61,7 +74,7 @@ plot.eemlist <- function(x, which = 1, ...) {
 #' @importFrom utils head tail
 #' @export
 #' @examples
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
 #' eem <- eem_read(file)
 #'
 #' summary(eem)
@@ -89,6 +102,14 @@ summary.eem <- function(object, ...){
   cat("manucafturer:", attr(object, "manucafturer"), "\n")
 }
 
+print.eem <- function(object, ...){
+  summary(object)
+}
+
+print.eemlist <- function(object, ...){
+  summary(object)
+}
+
 
 #' Display summary of an eemlist object
 #'
@@ -97,8 +118,8 @@ summary.eem <- function(object, ...){
 #'
 #' @export
 #' @examples
-#' folder <- system.file("extdata/cary/eem/", package = "eemR")
-#' eem <- eem_read(folder)
+#' folder <- system.file("extdata/cary", package = "eemR")
+#' eem <- eem_read(folder, recursive = TRUE)
 #'
 #' summary(eem)
 summary.eemlist <- function(object, ...){
@@ -115,26 +136,26 @@ summary.eemlist <- function(object, ...){
 #' Cut emission and/or excitation wavelengths from EEMs
 #'
 #' @template template_eem
-#' @param ex A numeric vector of excitation wavelengths to be removed.
-#' @param em A numeric vector of emission wavelengths to be removed.
+#' @param ex A numeric vector with range of excitation wavelengths to be kept.
+#' @param em A numeric vector with range of emission wavelengths to be kept.
 #'
 #' @export
 #' @examples
 #' # Open the fluorescence eem
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
 #'
 #' eem <- eem_read(file)
 #' plot(eem)
 #'
 #' # Cut few excitation wavelengths
-#' eem <- eem_cut(eem, ex = c(220, 225, 230, 230))
+#' eem <- eem_cut(eem, ex = c(220, 300), em = c(325, 500))
 #' plot(eem)
 eem_cut <- function(eem, ex, em){
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"))
+  stopifnot(.is_eemlist(eem) | .is_eem(eem))
 
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
 
     res <- lapply(eem, eem_cut, ex = ex, em = em)
 
@@ -144,13 +165,16 @@ eem_cut <- function(eem, ex, em){
 
   }
 
-  ## Maybe round em and ex wavelengths so it is
+  ## Maybe round em and ex wavelengths
 
   if(!missing(ex)){
 
-    stopifnot(all(ex %in% eem$ex))
+    stopifnot(length(ex) == 2,
+              all(ex <= max(eem$ex) & ex >= min(eem$ex)),
+              ex[1] < ex[2])
 
-    index <- !eem$ex %in% ex
+    index <- which(eem$ex >= ex[1] & eem$ex <= ex[2])
+
 
     eem$ex <- eem$ex[index]
 
@@ -160,13 +184,16 @@ eem_cut <- function(eem, ex, em){
 
   if(!missing(em)){
 
-    stopifnot(all(em %in% eem$em))
+    stopifnot(length(em) == 2,
+              all(em <= max(eem$em) & em >= min(eem$em)),
+              em[1] < em[2])
 
-    index <- !eem$em %in% em
+    index <- which(eem$em >= em[1] & eem$em <= em[2])
 
     eem$em <- eem$em[index]
 
     eem$x <- eem$x[index, ]
+
   }
 
   return(eem)
@@ -196,10 +223,10 @@ eem_cut <- function(eem, ex, em){
 
 eem_set_wavelengths <- function(eem, ex, em){
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"))
+  stopifnot(.is_eemlist(eem) | .is_eem(eem))
 
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
 
     res <- lapply(eem, eem_set_wavelengths, ex = ex, em = em)
 
@@ -245,6 +272,9 @@ eem_set_wavelengths <- function(eem, ex, em){
 #' @param ignore_case Logical, should sample name case should be ignored (TRUE)
 #'   or not (FALSE). Default is FALSE.
 #'
+#' @param verbose Logical determining if removed/extraced eems should be printed
+#'   on screen.
+#'
 #' @details \code{sample} argument can be either numeric or character vector. If
 #'   it is numeric, samples at specified index will be removed.
 #'
@@ -253,26 +283,27 @@ eem_set_wavelengths <- function(eem, ex, em){
 #'   be removed. See \code{examples} for more details.
 #'
 #' @examples
-#' folder <- system.file("extdata/cary/eem", package = "eemR")
+#' folder <- system.file("extdata/cary/scans_day_1", package = "eemR")
 #' eems <- eem_read(folder)
 #'
 #' eem_extract(eems, c(1, 3)) ## Removes samples 1 and 3
 #' eem_extract(eems, c(1, 3), remove = TRUE) ## extract samples 1 and 3
 #'
-#' ## Remove all samples containing "3" in their names.
+#' # Remove all samples containing "3" in their names.
 #' eem_extract(eems, "3")
 #'
-#' ## Remove all samples containing either character "s" or character "2" in their names.
+#' # Remove all samples containing either character "s" or character "2" in their names.
 #' eem_extract(eems, c("s", "2"))
 #'
-#' ## Remove all samples containing "blank" or "nano"
+#' # Remove all samples containing "blank" or "nano"
 #' eem_extract(eems, c("blank", "nano"))
 #'
-#' ## Remove all samples starting with "no"
-#' eem_extract(eems, "^no")
+#' # Remove all samples starting with "no"
+#' eem_extract(eems, "^s")
 #'
 #' @export
-eem_extract <- function(eem, sample, remove = FALSE, ignore_case = FALSE) {
+eem_extract <- function(eem, sample, remove = FALSE, ignore_case = FALSE,
+                        verbose = TRUE) {
 
   stopifnot(class(eem) == "eemlist",
             is.character(sample) | is.numeric(sample))
@@ -286,9 +317,10 @@ eem_extract <- function(eem, sample, remove = FALSE, ignore_case = FALSE) {
 
     eem[ifelse(remove, -sample, sample)] <- NULL
 
-    cat(ifelse(remove, "Removed sample(s):", "Extracted sample(s):"),
-        sample_names[sample])
-
+    if(verbose){
+      cat(ifelse(remove, "Removed sample(s):", "Extracted sample(s):"),
+          sample_names[sample], "\n")
+    }
   }
 
   ## Regular expression
@@ -300,40 +332,41 @@ eem_extract <- function(eem, sample, remove = FALSE, ignore_case = FALSE) {
 
     eem[xor(index, !remove)] <- NULL
 
-    if(all(index == FALSE)){
-      cat("Nothing to remove.")
-    }
-    else{
-      cat(ifelse(remove, "Removed sample(s):", "Extracted sample(s):"),
-          sample_names[index])
+    if(verbose){
+      if(all(index == FALSE)){
+        cat("Nothing to remove.")
+      }
+      else{
+        cat(ifelse(remove, "Removed sample(s):", "Extracted sample(s):"),
+            sample_names[index], "\n")
+      }
     }
   }
 
   return(eem)
 }
 
-
 #' The names of an eem or eemlist objects
 #'
-#' @param eem An object of class \code{eem} or \code{eemlist}.
+#' @template template_eem
 #'
 #' @return A character vector containing the names of the EEMs.
 #'
 #' @examples
-#' file <- system.file("extdata/cary/eem", "sample1.csv", package = "eemR")
-#' eem <- eem_read(file)
+#' file <- system.file("extdata/cary/", package = "eemR")
+#' eem <- eem_read(file, recursive = TRUE)
 #'
-#' eem_sample_names(eem)
+#' eem_names(eem)
 #'
 #' @export
-eem_sample_names <- function(eem){
+eem_names <- function(eem){
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"))
+  stopifnot(.is_eemlist(eem) | .is_eem(eem))
 
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
 
-    res <- unlist(lapply(eem, eem_sample_names))
+    res <- unlist(lapply(eem, eem_names))
 
     return(res)
 
@@ -352,24 +385,24 @@ eem_sample_names <- function(eem){
 #' @return An \code{eem} or \code{eemlist}.
 #'
 #' @examples
-#' folder <- system.file("extdata/cary/eem", package = "eemR")
+#' folder <- system.file("extdata/cary/scans_day_1", package = "eemR")
 #' eems <- eem_read(folder)
 #'
-#' eem_sample_names(eems)
-#' eem_sample_names(eems) <- c("a", "b", "c")
-#' eem_sample_names(eems)
+#' eem_names(eems)
+#' eem_names(eems) <- c("a", "b", "c", "d")
+#' eem_names(eems)
 #'
 #' @export
-`eem_sample_names<-` <- function(x, value){
+`eem_names<-` <- function(x, value){
 
 
-  stopifnot(all(lapply(x, class) == "eem") | class(x) != "eemlist")
+  stopifnot(.is_eemlist(x) | .is_eem(x))
 
-  if(class(x) == "eemlist"){
+  if(.is_eemlist(x)){
 
     stopifnot(length(x) == length(value))
 
-    res <- Map(`eem_sample_names<-`, x[], value)
+    res <- Map(`eem_names<-`, x[], value)
 
     class(res) <- "eemlist"
     return(res)
@@ -389,13 +422,13 @@ eem_sample_names <- function(eem){
 #' Function to bind EEMs that have been loaded from different folders or have
 #' been processed differently.
 #'
-#' @param ... One or more object of class \code{eem} or \code{eemlist}.
+#' @param ... One or more object of class \code{eemlist}.
 #'
 #' @return An object of \code{eemlist}.
 #' @export
 #'
 #' @examples
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
 #' eem <- eem_read(file)
 #'
 #' eem <- eem_bind(eem, eem)
@@ -431,4 +464,108 @@ my_unlist <- function(x){
     return(x)
 
   }
+}
+
+.is_eemlist <- function(eem) {
+  ifelse(class(eem) == "eemlist", TRUE, FALSE)
+}
+
+.is_eem <- function(eem) {
+  ifelse(class(eem) == "eem", TRUE, FALSE)
+}
+
+.plot_shiny <- function(eem){
+
+  metrics <- dplyr::left_join(eem_coble_peaks(eem, verbose = FALSE),
+                              eem_biological_index(eem, verbose = FALSE),
+                              by = "sample")
+
+  metrics <- dplyr::left_join(metrics,
+                              eem_fluorescence_index(eem, verbose = FALSE),
+                              by = "sample")
+
+  metrics <- dplyr::left_join(metrics,
+                              eem_humification_index(eem, verbose = FALSE),
+                              by = "sample")
+
+  metrics[,-1] <-round(metrics[,-1], digits = 2)
+
+  # nl <- vector(mode = "list", length = length(eem_names(eem)))
+  # names(nl) <- eem_names(eem)
+  # nl[1:length(nl)] <- 1:length(nl)
+
+  ui <- shiny::fluidPage(
+
+    shiny::titlePanel("EEM interactive visualization"),
+
+    shiny::sidebarLayout(
+      shiny::sidebarPanel
+      (
+        shiny::checkboxInput("scale", label = "Keep z-axis fixed?", FALSE),
+        shiny::hr(),
+        shiny::checkboxInput("by", "Combined 2x2 plots", FALSE),
+        shiny::hr(),
+        shiny::sliderInput("ex_cut", "Select excitation range",
+                           min = min(eem[[1]]$ex),
+                           max = max(eem[[1]]$ex),
+                           value = c(min(eem[[1]]$ex), max(eem[[1]]$ex)),
+                           step = 1),
+        shiny::hr(),
+        shiny::sliderInput("em_cut", "Select emission range",
+                           min = min(eem[[1]]$em),
+                           max = max(eem[[1]]$em),
+                           value = c(min(eem[[1]]$em), max(eem[[1]]$em)),
+                           step = 1)
+      ),
+
+
+      shiny::mainPanel(shiny::plotOutput(outputId = "myeem", width = "550px", height = "550px"))
+    ),
+
+    shiny::br(),
+
+    DT::dataTableOutput("eem_list"),
+
+    shiny::br()
+
+)
+
+  server <- function(input, output) {
+
+    output$myeem <- shiny::renderPlot({
+
+      if(input$scale){
+        zlim <- range(unlist(lapply(eem, function(x) x$x)), na.rm = TRUE)
+      } else {
+        zlim <- range(eem[[input$eem_list_rows_selected]]$x, na.rm = TRUE)
+      }
+
+      if(!is.null(input$eem_list_rows_selected)){
+
+        n <- ifelse(input$by, 2, 1)
+
+        par(mfrow = c(n, n))
+
+        plot(eem,
+             which = input$eem_list_rows_selected,
+             xlim = c(input$ex_cut[1], input$ex_cut[2]),
+             ylim = c(input$em_cut[1], input$em_cut[2]),
+             zlim = zlim)
+
+      }
+    })
+
+    output$eem_list = DT::renderDataTable(
+      metrics,
+      server = FALSE,
+      selection = list(mode = 'single', selected = c(1)),
+      options = list(
+        autoWidth = TRUE,
+        columnDefs = list(list(width = '10px', targets = "_all"))
+      )
+
+    )
+  }
+
+  shiny::shinyApp(ui, server)
 }

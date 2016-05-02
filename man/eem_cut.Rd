@@ -7,27 +7,27 @@
 eem_cut(eem, ex, em)
 }
 \arguments{
-\item{eem}{Either an object of class \code{eem} or \code{eemlist}.}
+\item{eem}{An object of class \code{eemlist}.}
 
-\item{ex}{A numeric vector of excitation wavelengths to be removed.}
+\item{ex}{A numeric vector with range of excitation wavelengths to be kept.}
 
-\item{em}{A numeric vector of emission wavelengths to be removed.}
+\item{em}{A numeric vector with range of emission wavelengths to be kept.}
 }
 \value{
-Either an object of class \code{eem} or \code{eemlist}.
+An object of class \code{eemlist}.
 }
 \description{
 Cut emission and/or excitation wavelengths from EEMs
 }
 \examples{
 # Open the fluorescence eem
-file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
 
 eem <- eem_read(file)
 plot(eem)
 
 # Cut few excitation wavelengths
-eem <- eem_cut(eem, ex = c(220, 225, 230, 230))
+eem <- eem_cut(eem, ex = c(220, 300), em = c(325, 500))
 plot(eem)
 }
 

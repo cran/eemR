@@ -9,7 +9,7 @@ eem_export_matlab(file, ...)
 \arguments{
 \item{file}{The .mat file name where to export the structure.}
 
-\item{...}{One or more object of class \code{eem} or \code{eemlist}.}
+\item{...}{One or more object of class \code{eemlist}.}
 }
 \value{
 A structure named \code{OriginalData} is created and contains:
@@ -31,8 +31,8 @@ The function exports EEMs into PARAFAC-ready Matlab \code{.mat} file
   usable by the \href{www.models.life.ku.dk/drEEM}{drEEM} toolbox.
 }
 \examples{
-file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
-eem <- eem_read(file)
+file <- system.file("extdata/cary/", package = "eemR")
+eem <- eem_read(file, recursive = TRUE)
 
 export_to <- paste(tempfile(), ".mat", sep = "")
 eem_export_matlab(export_to, eem)

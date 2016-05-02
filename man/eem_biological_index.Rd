@@ -7,18 +7,20 @@
 eem_biological_index(eem, verbose = TRUE)
 }
 \arguments{
-\item{eem}{An object of class \code{eem} or \code{eemlist}.}
+\item{eem}{An object of class \code{eemlist}.}
 
 \item{verbose}{Logical determining if additional messages should be printed.}
 }
 \value{
+An object of class \code{eemlist}.
+
 A data frame containing the biological index (BIX) for each eem.
 }
 \description{
 The biological fluorescence index (BIX) is calculated by
   dividing the fluorescence at excitation 310 nm and emission at 380 nm (ex =
-  310, em = 430) by that at excitation 310 nm and emission at 430 nm (ex =
-  310, em = 380).
+  310, em = 380) by that at excitation 310 nm and emission at 430 nm (ex =
+  310, em = 430).
 }
 \section{Interpolation}{
 
@@ -31,7 +33,7 @@ The biological fluorescence index (BIX) is calculated by
   if data interpolation is performed.
 }
 \examples{
-file <- system.file("extdata/cary/eem/", package = "eemR")
+file <- system.file("extdata/cary/scans_day_1/", package = "eemR")
 eem <- eem_read(file)
 
 eem_biological_index(eem)

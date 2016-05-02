@@ -25,22 +25,45 @@
 #' @importFrom readr read_lines
 #' @export
 #' @examples
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
-#' eem <- eem_read(file)
+#' file <- system.file("extdata/cary/scans_day_1/", package = "eemR")
+#' eems <- eem_read(file, recursive = TRUE)
 
 eem_read <- function(file, recursive = FALSE) {
 
   stopifnot(file.exists(file) | file.info(file)$isdir,
             is.logical(recursive))
 
-  #--------------------------------------------
+  f <- function(file) {
+
+    # *************************************************************************
+    # Read the file and try to figure from which spectrofluo it belongs.
+    # *************************************************************************
+
+    data <- read_lines(file)
+
+    if(is_cary_eclipse(data)){
+      return(eem_read_cary(data, file))
+    }
+
+    if(is_aqualog(data)){
+      return(eem_read_aqualog(data, file))
+    }
+
+    if(is_shimadzu(data)){
+      return(eem_read_shimadzu(data, file))
+    }
+
+    message("I do not know how to read *** ", basename(file), " ***\n")
+  }
+
+  # *************************************************************************
   # Verify if user provided a dir or a file.
-  #--------------------------------------------
+  # *************************************************************************
   isdir <- file.info(file)$isdir
 
   if(isdir){
 
-    files <- list.files(file,
+    file <- list.files(file,
                         full.names = TRUE,
                         recursive = recursive,
                         no.. = TRUE,
@@ -48,48 +71,23 @@ eem_read <- function(file, recursive = FALSE) {
                         pattern = "*.txt|*.dat|*.csv",
                         ignore.case = TRUE)
 
-    files <- files[!file.info(files)$isdir]
+    file <- file[!file.info(file)$isdir]
 
-    res <- lapply(files, eem_read)
-
-    #res <- lapply(res, my_unlist)
-    #res <- unlist(res, recursive = FALSE)
-
-    class(res) <- "eemlist"
-
-    res[unlist(lapply(res, is.null))] <- NULL ## Remove unreadable EEMs
-
-    return(res)
   }
 
-  #---------------------------------------------------------------------
-  # Read the file and try to figure from which spectrofluo it belongs.
-  #---------------------------------------------------------------------
-  #data <- readLines(file)
+  res <- lapply(file, f)
 
-  data <- read_lines(file)
+  class(res) <- "eemlist"
 
-  if(is_cary_eclipse(data)){
-    return(eem_read_cary(data, file))
-  }
+  res[unlist(lapply(res, is.null))] <- NULL ## Remove unreadable EEMs
 
-  if(is_aqualog(data)){
-    return(eem_read_aqualog(data, file))
-  }
-
-  if(is_shimadzu(data)){
-    return(eem_read_shimadzu(data, file))
-  }
-
-  message("I do not know how to read *** ", basename(file), " ***\n")
-
-  return(NULL)
+  return(res)
 
 }
 
 #' eem constructor
 #'
-#' @param sample A string containing the file name of the eem.
+#' @param file A string containing the file name of the eem.
 #' @param x A matrix with fluorescence values.
 #' @param ex Vector of excitation wavelengths.
 #' @param em Vector of emission wavelengths.
@@ -104,12 +102,13 @@ eem_read <- function(file, recursive = FALSE) {
 #'  \item ex Excitation vector of wavelengths.
 #' }
 
-eem <- function(sample, x, ex, em){
+eem <- function(file, x, ex, em){
 
-  eem <- list(sample = make.names(file_path_sans_ext(basename(sample))),
+  eem <- list(sample = make.names(file_path_sans_ext(basename(file))),
               x = x,
               ex = ex,
-              em = em)
+              em = em,
+              location =  dirname(file))
 
   class(eem) <- "eem"
 
@@ -133,9 +132,9 @@ is_shimadzu <- function(x){
   all(unlist(lapply(x, length)) %in% 2)
 }
 
-#---------------------------------------------------------------------
+# *************************************************************************
 # Function reading Shimadzu .TXT files.
-#---------------------------------------------------------------------
+# *************************************************************************
 eem_read_shimadzu <- function(data, file){
 
   data <- stringr::str_split(data, "\t")
@@ -156,7 +155,7 @@ eem_read_shimadzu <- function(data, file){
   eem <- matrix(data, nrow = length(em), byrow = FALSE)
 
   ## Construct an eem object.
-  res <- eem(sample = file,
+  res <- eem(file = file,
              x = eem,
              ex = NA,
              em = em)
@@ -174,15 +173,19 @@ eem_read_shimadzu <- function(data, file){
 
 }
 
-#---------------------------------------------------------------------
+# *************************************************************************
 # Function reading Cary Eclipse csv files.
-#---------------------------------------------------------------------
+# *************************************************************************
 eem_read_cary <- function(data, file){
 
+  min_col <- 3 # Do not expect fluorescence data when there is less than 3 cols.
+
   data <- stringr::str_split(data, ",")
+  data[unlist(lapply(data, length)) < 3] <- NULL
 
   ## Find the probable number of columns
-  expected_col <- length(data[[1]])
+  n_col <- unlist(lapply(data, length))
+  expected_col <- as.numeric(names(sort(-table(n_col)))[1])
 
   data[lapply(data, length) != expected_col] <- NULL
 
@@ -201,7 +204,7 @@ eem_read_cary <- function(data, file){
   em <- data[, 1]
 
   ## Construct an eem object.
-  res <- eem(sample = file,
+  res <- eem(file = file,
              x = eem,
              ex = ex,
              em = em)
@@ -215,21 +218,29 @@ eem_read_cary <- function(data, file){
   return(res)
 }
 
-#---------------------------------------------------------------------
+# *************************************************************************
 # Fonction reading Aqualog dat files.
-#---------------------------------------------------------------------
+# *************************************************************************
 eem_read_aqualog <- function(data, file){
 
-  data <- readr::read_delim(file, delim = "\t")
-  data <- na.omit(data)
+  eem <- stringr::str_extract_all(data, "-?\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d+)?")
 
-  ex <- rev(as.numeric(grep("[0-9]", names(data), value = TRUE)))
-  em <- as.numeric(grep("[0-9]", t(data[, 1]), value = TRUE))
+  ex <- rev(as.numeric(eem[[1]]))
 
-  eem <- as.matrix(data[, ncol(data): 2])
+  n_col <- lapply(eem, length)
+  n_col <- unlist(n_col)
+  expected_col <- as.numeric(names(sort(-table(n_col)))[1])
+
+  eem[n_col != expected_col] <- NULL
+  eem <- lapply(eem, as.numeric)
+  eem <- do.call(rbind, eem)
+
+  em <- eem[, 1]
+  eem <- eem[, -1]
+  eem <- as.matrix(eem[, ncol(eem): 1])
 
   ## Construct an eem object.
-  res <- eem(sample = file,
+  res <- eem(file = file,
              x = eem,
              ex = ex,
              em = em)

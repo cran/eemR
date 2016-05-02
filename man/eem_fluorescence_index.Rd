@@ -7,11 +7,13 @@
 eem_fluorescence_index(eem, verbose = TRUE)
 }
 \arguments{
-\item{eem}{An object of class \code{eem}}
+\item{eem}{An object of class \code{eemlist}.}
 
 \item{verbose}{Logical determining if additional messages should be printed.}
 }
 \value{
+An object of class \code{eemlist}.
+
 A data frame containing fluorescence index (FI) for each eem.
 }
 \description{
@@ -28,7 +30,7 @@ Calculate the fluorescence index (FI)
   if data interpolation is performed.
 }
 \examples{
-file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
 eem <- eem_read(file)
 
 eem_fluorescence_index(eem)

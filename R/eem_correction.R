@@ -1,9 +1,11 @@
 #' Blank correction
 #'
+#' @description This function is used to remove blank from eems which can help to reduce the
+#' effect of scatter bands.
+#'
 #' @template template_eem
 #' @template template_blank
-#'
-#' @details Scatter bands can often be reduced by subtracting water blank.
+#' @template template_details_automatic_blank
 #'
 #' @references Murphy, K. R., Stedmon, C. a., Graeber, D., & Bro, R. (2013).
 #'   Fluorescence spectroscopy and multi-way techniques. PARAFAC. Analytical
@@ -11,19 +13,20 @@
 #'
 #'   \url{http://xlink.rsc.org/?DOI=c3ay41160e}
 #'
+#' @importFrom rlist list.apply list.group list.ungroup
 #' @export
 #' @examples
 #'
 #' ## Example 1
 #'
 #' # Open the fluorescence eem
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1", "sample1.csv", package = "eemR")
 #' eem <- eem_read(file)
 #'
 #' plot(eem)
 #'
 #' # Open the blank eem
-#' file <- system.file("extdata/cary/", "nano.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1", "nano.csv", package = "eemR")
 #' blank <- eem_read(file)
 #'
 #' plot(blank)
@@ -36,29 +39,72 @@
 #' ## Example 2
 #'
 #' # Open the fluorescence eem
-#' folder <- system.file("extdata/cary/eem/", package = "eemR")
-#' eem <- eem_read(folder)
+#' folder <- system.file("extdata/cary/scans_day_1", package = "eemR")
+#' eems <- eem_read(folder)
 #'
-#' plot(eem, which = 3)
+#' plot(eems, which = 3)
 #'
 #' # Open the blank eem
-#' file <- system.file("extdata/cary/", "nano.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1", "nano.csv", package = "eemR")
 #' blank <- eem_read(file)
 #'
 #' plot(blank)
 #'
 #' # Remove the blank
-#' eem <- eem_remove_blank(eem, blank)
+#' eem <- eem_remove_blank(eems, blank)
 #'
-#' plot(eem, which = 3)
+#' plot(eems, which = 3)
+#'
+#' # Automatic correction
+#' folder <- system.file("extdata/cary/", package = "eemR")
+#'
+#' # Look at the folder structure
+#' list.files(folder, "*.csv", recursive = TRUE)
+#'
+#' eems <- eem_read(folder, recursive = TRUE)
+#' res <- eem_remove_blank(eems)
 
-eem_remove_blank <- function(eem, blank) {
+eem_remove_blank <- function(eem, blank = NA) {
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"),
-            class(blank) == "eem")
+  stopifnot(.is_eemlist(eem) | .is_eem(eem),
+            .is_eemlist(blank) | is.na(blank))
+
+  if(is.na(blank)){
+
+    t <- list.group(eem, ~location)
+    t <- lapply(t, function(x){class(x) <- "eemlist"; return(x)})
+
+    res <- list.apply(t, .eem_remove_blank)
+    res <- list.ungroup(res)
+    class(res) <- "eemlist"
+    return(res)
+
+  } else {
+    .eem_remove_blank(eem, blank)
+  }
+}
+
+.eem_remove_blank <- function(eem, blank = NA) {
+
+  stopifnot(.is_eemlist(eem) | .is_eem(eem),
+            .is_eemlist(blank) | is.na(blank))
 
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
+
+    blank_names <- c("nano", "miliq", "milliq", "mq", "blank")
+
+    # if blank is NA then try to split the eemlist into blank and eems
+    if(is.na(blank)){
+      blank <- eem_extract(eem, blank_names, remove = FALSE, ignore_case = TRUE,
+                           verbose = FALSE)
+      eem <- eem_extract(eem, blank_names, remove = TRUE, ignore_case = TRUE,
+                         verbose = FALSE)
+
+      if(length(blank) != 1 | length(eem) < 1){
+        stop("Cannot find blank for automatic correction.", call. = FALSE)
+      }
+    }
 
     res <- lapply(eem,
                   eem_remove_blank,
@@ -71,11 +117,11 @@ eem_remove_blank <- function(eem, blank) {
   #---------------------------------------------------------------------
   # Do the blank subtraction.
   #---------------------------------------------------------------------
-
+  blank <- unlist(blank, recursive = FALSE)
   x <- eem$x - blank$x
 
   ## Construct an eem object.
-  res <- eem(sample = eem$sample,
+  res <- eem(file = eem$sample,
              x = x,
              ex = eem$ex,
              em = eem$em)
@@ -110,7 +156,7 @@ eem_remove_blank <- function(eem, blank) {
 #' @export
 #' @examples
 #' # Open the fluorescence eem
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1", "sample1.csv", package = "eemR")
 #' eem <- eem_read(file)
 #'
 #' plot(eem)
@@ -122,7 +168,7 @@ eem_remove_blank <- function(eem, blank) {
 
 eem_remove_scattering <- function(eem, type, order = 1, width = 10){
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"),
+  stopifnot(.is_eemlist(eem) | .is_eem(eem),
             all(type %in% c("raman", "rayleigh")),
             is.numeric(order),
             is.numeric(width),
@@ -133,7 +179,7 @@ eem_remove_scattering <- function(eem, type, order = 1, width = 10){
             is_between(width, 0, 100))
 
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
 
     res <- lapply(eem,
                   eem_remove_scattering,
@@ -154,9 +200,7 @@ eem_remove_scattering <- function(eem, type, order = 1, width = 10){
   ex <- eem$ex
 
   if(type == "raman"){
-
     ex <- .find_raman_peaks(eem$ex)
-
   }
 
   ind1 <- mapply(function(x)em <= x, order * ex - width)
@@ -167,10 +211,8 @@ eem_remove_scattering <- function(eem, type, order = 1, width = 10){
   x <- x * ind3
 
   ## Construct an eem object.
-  res <- eem(sample = eem$sample,
-             x = x,
-             ex = eem$ex,
-             em = eem$em)
+  res <- eem
+  res$x <- x
 
   attributes(res) <- attributes(eem)
   attr(res, "is_scatter_corrected") <- TRUE
@@ -205,6 +247,7 @@ eem_remove_scattering <- function(eem, type, order = 1, width = 10){
 #'
 #' @template template_eem
 #' @template template_blank
+#' @template template_details_automatic_blank
 #'
 #' @description Normalize fluorescence intensities to the standard scale of
 #'   Raman Units (R.U).
@@ -235,13 +278,13 @@ eem_remove_scattering <- function(eem, type, order = 1, width = 10){
 #' @export
 #' @examples
 #' # Open the fluorescence eem
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1", "sample1.csv", package = "eemR")
 #' eem <- eem_read(file)
 #'
 #' plot(eem)
 #'
 #' # Open the blank eem
-#' file <- system.file("extdata/cary/", "nano.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1", "nano.csv", package = "eemR")
 #' blank <- eem_read(file)
 #'
 #' # Do the normalisation
@@ -249,31 +292,71 @@ eem_remove_scattering <- function(eem, type, order = 1, width = 10){
 #'
 #' plot(eem)
 
-eem_raman_normalisation <- function(eem, blank){
+eem_raman_normalisation <- function(eem, blank = NA) {
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"),
-            class(blank) == "eem")
+  stopifnot(.is_eemlist(eem) | .is_eem(eem),
+            .is_eemlist(blank) | is.na(blank))
+
+  if(is.na(blank)){
+
+    t <- list.group(eem, ~location)
+    t <- lapply(t, function(x){class(x) <- "eemlist"; return(x)})
+
+    res <- list.apply(t, .eem_raman_normalisation)
+    res <- list.ungroup(res)
+    class(res) <- "eemlist"
+    return(res)
+
+  } else {
+    .eem_raman_normalisation(eem, blank)
+  }
+
+}
+
+.eem_raman_normalisation <- function(eem, blank = NA){
+
+  stopifnot(.is_eemlist(eem) | .is_eem(eem),
+            .is_eemlist(blank) | is.na(blank))
 
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
+
+    blank_names <- c("nano", "miliq", "milliq", "mq", "blank")
+
+    # if blank is NA then try to split the eemlist into blank and eems
+    if(is.na(blank)){
+
+      blank <- eem_extract(eem, blank_names, remove = FALSE, ignore_case = TRUE,
+                           verbose = FALSE)
+      eem <- eem_extract(eem, blank_names, remove = TRUE, ignore_case = TRUE,
+                         verbose = FALSE)
+
+      if(length(blank) != 1 | length(eem) < 1){
+        stop("Cannot find blank for automatic correction.", call. = FALSE)
+      }
+    }
 
     res <- lapply(eem,
-                  eem_raman_normalisation,
+                  .eem_raman_normalisation,
                   blank = blank)
 
     class(res) <- class(eem)
-
     return(res)
   }
 
   #---------------------------------------------------------------------
   # Do the normalisation.
   #---------------------------------------------------------------------
+  blank <- unlist(blank, recursive = FALSE)
   index_ex <- which(blank$ex == 350)
   index_em <- which(blank$em >= 371 & blank$em <= 428)
 
   x <- blank$em[index_em]
   y <- blank$x[index_em, index_ex]
+
+  if(any(is.na(x)) | any(is.na(y))){
+    stop("NA values found in the blank sample. Maybe you removed scattering too soon?", call. = FALSE)
+  }
 
   area <- sum(diff(x) * (y[-length(y)] + y[-1]) / 2)
 
@@ -282,7 +365,7 @@ eem_raman_normalisation <- function(eem, blank){
   x <- eem$x / area
 
   ## Construct an eem object.
-  res <- eem(sample = eem$sample,
+  res <- eem(file = eem$sample,
              x = x,
              ex = eem$ex,
              em = eem$em)
@@ -337,8 +420,9 @@ eem_raman_normalisation <- function(eem, blank){
 #' library(eemR)
 #' data("absorbance")
 #'
-#' folder <- system.file("extdata/cary/eem", package = "eemR")
+#' folder <- system.file("extdata/cary/scans_day_1", package = "eemR")
 #' eems <- eem_read(folder)
+#' eems <- eem_extract(eems, "nano", remove = TRUE) # Remove the blank sample
 #'
 #' ## Remove scattering (1st order)
 #' eems <- eem_remove_scattering(eems, "rayleigh")
@@ -353,15 +437,12 @@ eem_raman_normalisation <- function(eem, blank){
 #' @export
 eem_inner_filter_effect <- function(eem, absorbance, pathlength = 1) {
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"),
-
+  stopifnot(.is_eemlist(eem) | .is_eem(eem),
             is.data.frame(absorbance),
-
             is.numeric(pathlength))
 
-
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
 
     res <- lapply(eem, eem_inner_filter_effect, absorbance = absorbance)
 
@@ -394,7 +475,6 @@ eem_inner_filter_effect <- function(eem, absorbance, pathlength = 1) {
 
     stop("absorbance wavelenghts are not in the range of
          excitation wavelengths", call. = FALSE)
-
   }
 
   spectra <- absorbance[, which(names(absorbance) == eem$sample)]
@@ -436,7 +516,7 @@ eem_inner_filter_effect <- function(eem, absorbance, pathlength = 1) {
   x <- eem$x / ife_correction_factor
 
   ## Construct an eem object.
-  res <- eem(sample = eem$sample,
+  res <- eem(file = eem$sample,
              x = x,
              ex = eem$ex,
              em = eem$em)

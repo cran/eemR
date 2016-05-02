@@ -7,7 +7,7 @@
 eem_bind(...)
 }
 \arguments{
-\item{...}{One or more object of class \code{eem} or \code{eemlist}.}
+\item{...}{One or more object of class \code{eemlist}.}
 }
 \value{
 An object of \code{eemlist}.
@@ -17,7 +17,7 @@ Function to bind EEMs that have been loaded from different folders or have
 been processed differently.
 }
 \examples{
-file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
 eem <- eem_read(file)
 
 eem <- eem_bind(eem, eem)

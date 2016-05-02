@@ -4,15 +4,15 @@
 \alias{eem_raman_normalisation}
 \title{Fluorescence Intensity Calibration Using the Raman Scatter Peak of Water}
 \usage{
-eem_raman_normalisation(eem, blank)
+eem_raman_normalisation(eem, blank = NA)
 }
 \arguments{
-\item{eem}{Either an object of class \code{eem} or \code{eemlist}.}
+\item{eem}{An object of class \code{eemlist}.}
 
-\item{blank}{Either an object of class \code{eem} or a list of \code{eem}.}
+\item{blank}{An object of class \code{eemlist}.}
 }
 \value{
-Either an object of class \code{eem} or \code{eemlist}.
+An object of class \code{eemlist}.
 
 An object of class \code{eem} containing: \itemize{ \item sample The
   file name of the eem. \item x A matrix with fluorescence values. \item em
@@ -24,6 +24,42 @@ Normalize fluorescence intensities to the standard scale of
   Raman Units (R.U).
 }
 \details{
+The function will first try to use the provided \code{blank}. If the
+  blank is omited, the function will then try to extract the blank from the
+  \code{eemlist} object. This is done by looking for sample names containing
+  one of these complete or partial strings (ignoring case):
+
+  \enumerate{ \item nano \item miliq \item milliq \item mq \item blank }
+
+  Note that if \code{blank} is omited, the function will group the
+  \code{eemlist} based on file location and will assumes that there is a
+  blank sample in each folder. In that context, the blank will be used on
+  each sample in the same folder.
+
+  Consider the following example where there are two folders that could
+  represent scans performed on two different days `scans_day_1` and
+  `scans_day_2`.
+
+  \tabular{ll}{
+  scans_day_1\tab\cr
+  \tab nano.csv\cr
+  \tab sample1.csv\cr
+  \tab sample2.csv\cr
+  \tab sample3.csv\cr
+  scans_day_2 \tab\cr
+  \tab blank.csv\cr
+  \tab s1.csv\cr
+  \tab s2.csv\cr
+  \tab s3.csv\cr
+  }
+
+  In each folder there are three samples and one blank files. In that
+  context, `eem_remove_blank()` will use the blank `nano.csv` from
+  `sample1.csv`, `sample2.csv` and `sample3.csv`. The same strategy will be
+  used for files in folder `scans_day_2` but with blank named `blank.csv`.
+
+  Note that the blanks eem are not returned by the function.
+
 The normalization procedure consists in dividing all fluorescence
   intensities by the area (integral) of the Raman peak. The peak is located
   at excitation of 350 nm. (ex = 370) betwen 371 nm. and 428 nm in emission
@@ -31,13 +67,13 @@ The normalization procedure consists in dividing all fluorescence
 }
 \examples{
 # Open the fluorescence eem
-file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+file <- system.file("extdata/cary/scans_day_1", "sample1.csv", package = "eemR")
 eem <- eem_read(file)
 
 plot(eem)
 
 # Open the blank eem
-file <- system.file("extdata/cary/", "nano.csv", package = "eemR")
+file <- system.file("extdata/cary/scans_day_1", "nano.csv", package = "eemR")
 blank <- eem_read(file)
 
 # Do the normalisation

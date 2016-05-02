@@ -4,12 +4,18 @@
 \alias{plot.eemlist}
 \title{Surface plot of eem}
 \usage{
-\method{plot}{eemlist}(x, which = 1, ...)
+\method{plot}{eemlist}(x, which = 1, interactive = FALSE,
+  show_peaks = FALSE, ...)
 }
 \arguments{
 \item{x}{An object of class \code{eemlist}.}
 
 \item{which}{An integer representing the index of eem to be plotted.}
+
+\item{interactive}{If \code{TRUE} a Shiny app will start to visualize EEMS.}
+
+\item{show_peaks}{Boolean indicating if Cobble's peaks should be displayed on
+the surface plot. Default is FALSE.}
 
 \item{...}{Extra arguments for \code{image.plot}.}
 }
@@ -17,9 +23,9 @@
 Surface plot of eem
 }
 \examples{
-folder <- system.file("extdata/cary/eem/", package = "eemR")
+folder <- system.file("extdata/cary/scans_day_1/", package = "eemR")
 eem <- eem_read(folder)
 
-plot(eem, which = 2)
+plot(eem, which = 3)
 }
 

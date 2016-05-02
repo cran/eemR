@@ -7,11 +7,13 @@
 eem_coble_peaks(eem, verbose = TRUE)
 }
 \arguments{
-\item{eem}{An object of class \code{eem}}
+\item{eem}{An object of class \code{eemlist}.}
 
 \item{verbose}{Logical determining if additional messages should be printed.}
 }
 \value{
+An object of class \code{eemlist}.
+
 A data frame containing peaks B, T, A, M and C for each eem. See
   details for more information.
 }
@@ -45,7 +47,7 @@ According to Coble (1996), peaks are defined as follow:
   if data interpolation is performed.
 }
 \examples{
-file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
 eem <- eem_read(file)
 
 eem_coble_peaks(eem)

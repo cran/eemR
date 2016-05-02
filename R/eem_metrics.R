@@ -4,14 +4,12 @@
 #---------------------------------------------------------------------
 msg_warning_wavelength <- function(){
   msg <- "This metric uses either excitation or emission wavelenghts that were not present in the data. Data has been interpolated to fit the requested wavelengths."
-
   return(msg)
 }
 
-
 #' Calculate the fluorescence index (FI)
 #'
-#' @param eem An object of class \code{eem}
+#' @template template_eem
 #'
 #' @template template_section_interp2
 #'
@@ -20,17 +18,17 @@ msg_warning_wavelength <- function(){
 #' @return A data frame containing fluorescence index (FI) for each eem.
 #' @export
 #' @examples
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
 #' eem <- eem_read(file)
 #'
 #' eem_fluorescence_index(eem)
 
 eem_fluorescence_index <- function(eem, verbose = TRUE){
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"))
+  stopifnot(.is_eemlist(eem) | .is_eem(eem))
 
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
 
     res <- lapply(eem, eem_fluorescence_index, verbose = verbose)
     res <- dplyr::bind_rows(res)
@@ -53,10 +51,9 @@ eem_fluorescence_index <- function(eem, verbose = TRUE){
 
 }
 
-
 #' Extract fluorescence peaks
 #'
-#' @param eem An object of class \code{eem}
+#' @template template_eem
 #'
 #' @template template_section_interp2
 #'
@@ -85,7 +82,7 @@ eem_fluorescence_index <- function(eem, verbose = TRUE){
 #'   \url{http://doi.org/10.1016/0304-4203(95)00062-3}
 #'
 #' @examples
-#' file <- system.file("extdata/cary/eem/", "sample1.csv", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
 #' eem <- eem_read(file)
 #'
 #' eem_coble_peaks(eem)
@@ -93,10 +90,10 @@ eem_fluorescence_index <- function(eem, verbose = TRUE){
 #' @export
 eem_coble_peaks <- function(eem, verbose = TRUE){
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"))
+  stopifnot(.is_eemlist(eem) | .is_eem(eem))
 
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
 
     res <- lapply(eem, eem_coble_peaks, verbose = verbose)
     res <- dplyr::bind_rows(res)
@@ -111,7 +108,6 @@ eem_coble_peaks <- function(eem, verbose = TRUE){
     warning(msg_warning_wavelength(), call. = FALSE)
 
   }
-
 
   ## Get the peaks
   b <- pracma::interp2(eem$ex, eem$em, eem$x, 275, 310)
@@ -137,12 +133,11 @@ eem_coble_peaks <- function(eem, verbose = TRUE){
                     m = m,
                     c = c,
                     stringsAsFactors = FALSE))
-
 }
 
 #' Calculate the fluorescence humification index (HIX)
 #'
-#' @param eem An object of class \code{eem} or \code{eemlist}.
+#' @template template_eem
 #' @param scale Logical indicating if HIX should be scaled, default is FALSE.
 #'   See details for more information.
 #'
@@ -163,18 +158,18 @@ eem_coble_peaks <- function(eem, verbose = TRUE){
 #' @return A data frame containing the humification index (HIX) for each eem.
 #' @export
 #' @examples
-#' file <- system.file("extdata/cary/eem/", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1/", package = "eemR")
 #' eem <- eem_read(file)
 #'
 #' eem_humification_index(eem)
 #'
 eem_humification_index <- function(eem, scale = FALSE, verbose = TRUE) {
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"),
+  stopifnot(.is_eemlist(eem) | .is_eem(eem),
             is.logical(scale))
 
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
 
     res <- lapply(eem, eem_humification_index, verbose = verbose, scale = scale)
     res <- dplyr::bind_rows(res)
@@ -217,14 +212,14 @@ eem_humification_index <- function(eem, scale = FALSE, verbose = TRUE) {
 
 #' Calculate the biological fluorescence index (BIX)
 #'
-#' @param eem An object of class \code{eem} or \code{eemlist}.
+#' @template template_eem
 #'
 #' @template template_section_interp2
 #'
 #' @description The biological fluorescence index (BIX) is calculated by
 #'   dividing the fluorescence at excitation 310 nm and emission at 380 nm (ex =
-#'   310, em = 430) by that at excitation 310 nm and emission at 430 nm (ex =
-#'   310, em = 380).
+#'   310, em = 380) by that at excitation 310 nm and emission at 430 nm (ex =
+#'   310, em = 430).
 #'
 #' @references Huguet, A., Vacher, L., Relexans, S., Saubusse, S., Froidefond,
 #'   J. M., & Parlanti, E. (2009). Properties of fluorescent dissolved organic
@@ -235,17 +230,17 @@ eem_humification_index <- function(eem, scale = FALSE, verbose = TRUE) {
 #' @return A data frame containing the biological index (BIX) for each eem.
 #' @export
 #' @examples
-#' file <- system.file("extdata/cary/eem/", package = "eemR")
+#' file <- system.file("extdata/cary/scans_day_1/", package = "eemR")
 #' eem <- eem_read(file)
 #'
 #' eem_biological_index(eem)
 #'
 eem_biological_index <- function(eem, verbose = TRUE) {
 
-  stopifnot(class(eem) == "eem" | any(lapply(eem, class) == "eem"))
+  stopifnot(.is_eemlist(eem) | .is_eem(eem))
 
   ## It is a list of eems, then call lapply
-  if(any(lapply(eem, class) == "eem")){
+  if(.is_eemlist(eem)){
 
     res <- lapply(eem, eem_biological_index, verbose = verbose)
     res <- dplyr::bind_rows(res)
@@ -258,9 +253,7 @@ eem_biological_index <- function(eem, verbose = TRUE) {
   #---------------------------------------------------------------------
 
   if(!all(310 %in% eem$ex & c(380, 430) %in% eem$em) & verbose){
-
     warning(msg_warning_wavelength(), call. = FALSE)
-
   }
 
   fluo_380 <- pracma::interp2(eem$ex, eem$em, eem$x, 310, 380)

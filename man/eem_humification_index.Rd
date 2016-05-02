@@ -7,7 +7,7 @@
 eem_humification_index(eem, scale = FALSE, verbose = TRUE)
 }
 \arguments{
-\item{eem}{An object of class \code{eem} or \code{eemlist}.}
+\item{eem}{An object of class \code{eemlist}.}
 
 \item{scale}{Logical indicating if HIX should be scaled, default is FALSE.
 See details for more information.}
@@ -15,6 +15,8 @@ See details for more information.}
 \item{verbose}{Logical determining if additional messages should be printed.}
 }
 \value{
+An object of class \code{eemlist}.
+
 A data frame containing the humification index (HIX) for each eem.
 }
 \description{
@@ -35,7 +37,7 @@ The fluorescence humification index (HIX), which compares two
   if data interpolation is performed.
 }
 \examples{
-file <- system.file("extdata/cary/eem/", package = "eemR")
+file <- system.file("extdata/cary/scans_day_1/", package = "eemR")
 eem <- eem_read(file)
 
 eem_humification_index(eem)
