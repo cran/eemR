@@ -62,7 +62,8 @@ ggplot(df, aes(x = em)) +
 
 ## ----fig3, echo = FALSE, message=FALSE, dev='png', fig.align='center', fig.width=7, fig.height=5, fig.cap = 'Surface plot of an EEM with first order of Raman and Rayleigh scattering removed. Missing values (`NA`) have been placed in both diagonals using a bandwidth of 10 nm.', results="hide"----
 
-file <- system.file("extdata/cary/scans_day_1/", "sample3.csv", package = "eemR")
+file <- system.file("extdata/cary/scans_day_1/", "sample3.csv", 
+                    package = "eemR")
 
 eem <- eem_read(file, recursive = FALSE)
 
@@ -73,8 +74,7 @@ data("absorbance")
 
 eem_scatter_removed <- eem_inner_filter_effect(eem, absorbance, 1)
 
-file <- "/media/persican/Philippe Massicotte/Phil/articles/eemR/jss/figures/ife.rds"
-ife <- readRDS(file)
+load("ife.rda")
 
 
 jet.colors <- colorRampPalette(c("#00007F",
@@ -152,13 +152,11 @@ legend("topleft",
 
 ## ----fig4, echo = FALSE, warning=FALSE, dev="png", fig.width = 7, fig.align="center", fig.cap = "IFE correction process. Panel (A) shows an uncorrected EEM (the color bar is the florescence intensity in A.U.). Panel (B) is the corresponding absorbance spectra measured on the same sample. Panel (C) shows the IFE correction factors corresponding to the values of the denominator in Equation (@ife) with values close to 1 indicating less pronounced correction. Panel (D) shows the corrected sample (the color bar is the fluorescence intensity in A.U.)."----
 
-folder <- "/media/persican/Philippe Massicotte/Phil/Doctorat/PARAFAC/PARAFAC Files/Raw Data/Daniel/CDOM/3D/BlancNano5.csv"
+load("blank.rda")
 
-eem <- eem_read(folder)
+raman <- blank[[1]]$x[, which(blank[[1]]$ex == 350)]
 
-raman <- eem[[1]]$x[, which(eem[[1]]$ex == 350)]
-
-df <- data.frame(em = eem[[1]]$em, raman)
+df <- data.frame(em = blank[[1]]$em, raman)
 
 shade <- rbind(c(371,0), subset(df, em >= 371 & em <= 428), c(df[nrow(df), "X"], 0))
 

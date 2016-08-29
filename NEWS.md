@@ -1,3 +1,31 @@
+# eemR 0.1.4
+
+- `eem_extract()` is now more intuitive to use. `remove` argument has been replace by `keep`. If `TRUE`, the specified samples will be returned. If `FALSE`, they will be removed (#37).
+
+- `eem_cut()` now removes specified wavelenghts instead of keeping them.
+
+- `eem_cut()` gains an argument `fill_with_na`. If `TRUE` fluorescence at specified wavelengths will be replaced with `NA` instead of being removed.
+
+- File structure is now kept when performing inner-filter effect correction (#35).
+
+- Now using [viridis](https://cran.r-project.org/package=viridis) space colors for plotting EEMs instead of color jet.
+
+- `eem_remove_scattering()` no longer `tolower` absorbance names and will assume that the provided absorbance spectra match exactly EEM's names.
+
+- Fixing a bug that prevented the interactive plot to work properly. 
+
+- `summary(x)` and `print(x)` now return a data frame containing summarized information on EEMs contained in `x`. See `?summary.eemlist`.
+
+- `eem_raman_normalisation()` and `eem_remove_blank()` will average blank EEMs if more than one are provided or found in the folder (#23).
+
+- `eem_raman_normalisation()`, `eem_remove_blank()` and `eem_inner_filter_effect()` will now verify if the correction has been already performed. If so, an unmodified EEM will be returned.
+
+- `eem_raman_normalisation()` now interpolates blank EEM to ensure that em at 350 and excitation between 371 and 428 exist (#31).
+
+- `eem_remove_blank()` and `eem_raman_normalisation()` will now keep blank samples when automatic correction is used. When automatic correction is used, the *untransformed* blank sample will be keep in the list.
+
+- An error will now occur if trying to perform blank correction after Raman normalization. 
+
 # eemR 0.1.3
 
 - Interactive plot using a simple shiny app. Using `plot(eems, interactive = TRUE)` will lunch a shiny app that allows to interactively browse EEMs contained in `eems`.

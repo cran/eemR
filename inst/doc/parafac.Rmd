@@ -1,0 +1,40 @@
+---
+title: "Working with PARAFAC results"
+author: "Philippe Massicotte"
+date: "`r Sys.Date()`"
+bibliography: biblio.bib
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Plotting PARAFAC model with \pkg{eemR}
+
+The \pkg{drEEM} MATLAB toolbox [@Murphy2013] offers a convenient way to create PARAFAC model. However, creating publication reading figures from the generated model can be challenging. The \pkg{eemR} package offers two different methods to plot results from a PARAFAC model created with the \pkg{drEEM} MATLAB toolbox. To have access to the different plotting function, one should first open a PARAFAC model contained in a mat file using the `eem_read_parafac()` function as follows:
+
+```{r}
+library(ggplot2)
+library(eemR)
+
+# Mat file containing the PARAFAC model
+f <- system.file("extdata/parafac_model.mat", package = "eemR")
+
+# Read the PARAFAC model that contains "mymodel". We also specify that we want the model with 4 components
+m <- eem_read_parafac(f, object = "mymodel", ncomp = 4)
+```
+
+
+## Plotting component loadings
+
+```{r, fig.width = 8, fig.height = 4, fig.align = "center"}
+p <- plot(m, ncol = 2, nrow = 2)
+p
+```
+
+## Extracting FMax
+
+It can be usefull to extract FMax values from the PARAFAC model to do further stastistical analysis in R.
+
+## References

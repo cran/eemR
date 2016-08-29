@@ -1,26 +1,17 @@
 #' @importFrom grDevices colorRampPalette
 #' @importFrom graphics par plot text
+#' @importFrom viridis viridis
 .plot_eem <- function(x, show_peaks, ...){
 
 
-  jet.colors <- colorRampPalette(c("#00007F",
-                                   "blue",
-                                   "#007FFF",
-                                   "cyan",
-                                   "#7FFF7F",
-                                   "yellow",
-                                   "#FF7F00",
-                                   "red",
-                                   "#7F0000"))
-
-  fields::image.plot(y = x$em,
+fields::image.plot(y = x$em,
              x = x$ex,
              z = t(x$x),
              main = paste(x$sample, "\n", attr(x, "manucafturer"), sep = ""),
              xlab = "Excitation (nm.)",
              ylab = "Emission (nm.)",
              legend.lab = "Fluorescence intensity",
-             col = jet.colors(255),
+             col = viridis::viridis(256),
              ...)
 
   if(show_peaks){
@@ -69,9 +60,7 @@ plot.eemlist <- function(x, which = 1,
 #'
 #' @param object An object of class \code{eem}.
 #' @param ... Extra arguments.
-#'
-#' @references \url{http://www.sciencedirect.com/science/article/pii/0304420395000623}
-#' @importFrom utils head tail
+#' @template template_summary
 #' @export
 #' @examples
 #' file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
@@ -83,39 +72,55 @@ summary.eem <- function(object, ...){
 
   stopifnot(class(object) == "eem")
 
-  cat("eem object:", dim(object$x)[1],
-      "x",  dim(object$x)[2],
-      "(", dim(object$x)[1] * dim(object$x)[2], ")", "\n")
+  df <- data.frame(
+    sample = object$sample,
+    ex_min = min(object$ex),
+    ex_max = max(object$ex),
+    em_min = min(object$em),
+    em_max = max(object$em),
+    is_blank_corrected = attr(object, "is_blank_corrected"),
+    is_scatter_corrected = attr(object, "is_scatter_corrected"),
+    is_ife_corrected = attr(object, "is_ife_corrected"),
+    is_raman_normalized = attr(object, "is_raman_normalized"),
+    manufacturer = attr(object, "manufacturer")
+    )
 
-  cat("ex: (", range(object$ex), "nm.)", head(object$ex, 3), "...", tail(object$ex, 3), "\n")
+  return(df)
 
-  cat("em: (", range(object$em), "nm.)", head(object$em, 3), "...", tail(object$em, 3), "\n")
-
-  cat("is_blank_corrected:", attr(object, "is_blank_corrected"), "\n")
-
-  cat("is_scatter_corrected:", attr(object, "is_scatter_corrected"), "\n")
-
-  cat("is_ife_corrected:", attr(object, "is_ife_corrected"), "\n")
-
-  cat("is_raman_normalized:", attr(object, "is_raman_normalized"), "\n")
-
-  cat("manucafturer:", attr(object, "manucafturer"), "\n")
 }
 
-print.eem <- function(object, ...){
-  summary(object)
+print.eem <- function(x, ...){
+  summary(x)
 }
 
-print.eemlist <- function(object, ...){
-  summary(object)
-}
+#' Display summary of an eemlist object
+#'
+#' @param x An object of class \code{eemlist}.
+#' @param ... Extra arguments.
+#' @template template_summary
+#'
+#' @export
+#' @examples
+#' folder <- system.file("extdata/cary", package = "eemR")
+#' eem <- eem_read(folder, recursive = TRUE)
+#'
+#' print(eem)
+print.eemlist <- function(x, ...){
+  stopifnot(class(x) == "eemlist")
 
+  df <- lapply(x, summary)
+  df <- do.call(rbind, df)
+
+  print(df)
+
+  invisible(df)
+}
 
 #' Display summary of an eemlist object
 #'
 #' @param object An object of class \code{eemlist}.
 #' @param ... Extra arguments.
-#'
+#' @template template_summary
 #' @export
 #' @examples
 #' folder <- system.file("extdata/cary", package = "eemR")
@@ -126,19 +131,22 @@ summary.eemlist <- function(object, ...){
 
   stopifnot(class(object) == "eemlist")
 
-  cat("eemlist object containing:", length(object), "eem\n\n")
+  df <- lapply(object, summary)
+  df <- do.call(rbind, df)
 
-  cat("First eem object:\n\n")
-  summary.eem(object[[1]])
+  return(df)
+
 }
 
 
 #' Cut emission and/or excitation wavelengths from EEMs
 #'
 #' @template template_eem
-#' @param ex A numeric vector with range of excitation wavelengths to be kept.
-#' @param em A numeric vector with range of emission wavelengths to be kept.
-#'
+#' @param ex A numeric vector of excitation wavelengths to be removed.
+#' @param em A numeric vector of emission wavelengths to be removed.
+#' @param fill_with_na Logical. If TRUE, fluorescence values at specified
+#'   wavelengths will be replaced with NA. If FALSE, these values will be
+#'   removed.
 #' @export
 #' @examples
 #' # Open the fluorescence eem
@@ -148,16 +156,21 @@ summary.eemlist <- function(object, ...){
 #' plot(eem)
 #'
 #' # Cut few excitation wavelengths
-#' eem <- eem_cut(eem, ex = c(220, 300), em = c(325, 500))
+#' eem <- eem_cut(eem, ex = c(220, 225, 230, 230))
 #' plot(eem)
-eem_cut <- function(eem, ex, em){
+#'
+#' eem <- eem_read(file)
+#' eem <- eem_cut(eem, em = 350:400, fill_with_na = TRUE)
+#' plot(eem)
+eem_cut <- function(eem, ex, em, fill_with_na = FALSE){
 
-  stopifnot(.is_eemlist(eem) | .is_eem(eem))
+  stopifnot(
+    .is_eemlist(eem) | .is_eem(eem))
 
   ## It is a list of eems, then call lapply
   if(.is_eemlist(eem)){
 
-    res <- lapply(eem, eem_cut, ex = ex, em = em)
+    res <- lapply(eem, eem_cut, ex = ex, em = em, fill_with_na = fill_with_na)
 
     class(res) <- class(eem)
 
@@ -169,30 +182,46 @@ eem_cut <- function(eem, ex, em){
 
   if(!missing(ex)){
 
-    stopifnot(length(ex) == 2,
-              all(ex <= max(eem$ex) & ex >= min(eem$ex)),
-              ex[1] < ex[2])
+    stopifnot(
+      is.numeric(ex),
+      all(ex >= 0)
+    )
 
-    index <- which(eem$ex >= ex[1] & eem$ex <= ex[2])
+    index <- which(eem$ex %in% ex)
 
+    if (length(index != 0)) {
 
-    eem$ex <- eem$ex[index]
-
-    eem$x <- eem$x[, index]
-
+      if (fill_with_na) {
+        # eem$ex[index] <- NA
+        eem$x[, index] <- NA
+      }
+      else {
+        eem$ex <- eem$ex[-index]
+        eem$x <- eem$x[, -index]
+      }
+    }
   }
 
   if(!missing(em)){
 
-    stopifnot(length(em) == 2,
-              all(em <= max(eem$em) & em >= min(eem$em)),
-              em[1] < em[2])
+    stopifnot(
+      is.numeric(em),
+      all(em >= 0)
+    )
 
-    index <- which(eem$em >= em[1] & eem$em <= em[2])
+    index <- which(eem$em %in% em)
 
-    eem$em <- eem$em[index]
+    if (length(index != 0)) {
 
-    eem$x <- eem$x[index, ]
+      if (fill_with_na) {
+        # eem$em[index] <- NA
+        eem$x[index, ] <- NA
+      }
+      else {
+        eem$em <- eem$em[-index]
+        eem$x <- eem$x[-index, ]
+      }
+    }
 
   }
 
@@ -267,7 +296,8 @@ eem_set_wavelengths <- function(eem, ex, em){
 #' @param sample Either numeric of character vector. See \code{details} for more
 #'   information.
 #'
-#' @param remove logical. Should EEMs removed (TRUE) or extracted (FALSE).
+#' @param keep logical. If TRUE, the specified \code{sample} will be returned.
+#'   If FALSE, they will be removed.
 #'
 #' @param ignore_case Logical, should sample name case should be ignored (TRUE)
 #'   or not (FALSE). Default is FALSE.
@@ -286,8 +316,13 @@ eem_set_wavelengths <- function(eem, ex, em){
 #' folder <- system.file("extdata/cary/scans_day_1", package = "eemR")
 #' eems <- eem_read(folder)
 #'
-#' eem_extract(eems, c(1, 3)) ## Removes samples 1 and 3
-#' eem_extract(eems, c(1, 3), remove = TRUE) ## extract samples 1 and 3
+#' eems
+#'
+#' # Remove first and third samples
+#' eem_extract(eems, c(1, 3))
+#'
+#' # Remove everything except first and third samples
+#' eem_extract(eems, c(1, 3), keep = TRUE)
 #'
 #' # Remove all samples containing "3" in their names.
 #' eem_extract(eems, "3")
@@ -298,11 +333,8 @@ eem_set_wavelengths <- function(eem, ex, em){
 #' # Remove all samples containing "blank" or "nano"
 #' eem_extract(eems, c("blank", "nano"))
 #'
-#' # Remove all samples starting with "no"
-#' eem_extract(eems, "^s")
-#'
 #' @export
-eem_extract <- function(eem, sample, remove = FALSE, ignore_case = FALSE,
+eem_extract <- function(eem, sample, keep = FALSE, ignore_case = FALSE,
                         verbose = TRUE) {
 
   stopifnot(class(eem) == "eemlist",
@@ -315,10 +347,14 @@ eem_extract <- function(eem, sample, remove = FALSE, ignore_case = FALSE,
 
     stopifnot(all(is_between(sample, 1, length(eem))))
 
-    eem[ifelse(remove, -sample, sample)] <- NULL
+    to_remove <- ifelse(rep(keep, length(sample)),
+                        setdiff(1:length(eem), sample),
+                        sample)
+
+    eem[to_remove] <- NULL
 
     if(verbose){
-      cat(ifelse(remove, "Removed sample(s):", "Extracted sample(s):"),
+      cat(ifelse(keep, "Extracted sample(s):", "Removed sample(s):"),
           sample_names[sample], "\n")
     }
   }
@@ -326,19 +362,19 @@ eem_extract <- function(eem, sample, remove = FALSE, ignore_case = FALSE,
   ## Regular expression
   if(is.character(sample)){
 
-    index <- grepl(paste(sample, collapse = "|"),
+    to_remove <- grepl(paste(sample, collapse = "|"),
                    sample_names,
                    ignore.case = ignore_case)
 
-    eem[xor(index, !remove)] <- NULL
+    eem[xor(to_remove, keep)] <- NULL
 
     if(verbose){
-      if(all(index == FALSE)){
+      if(all(to_remove == FALSE)){
         cat("Nothing to remove.")
       }
       else{
-        cat(ifelse(remove, "Removed sample(s):", "Extracted sample(s):"),
-            sample_names[index], "\n")
+        cat(ifelse(keep, "Extracted sample(s):", "Removed sample(s):"),
+            sample_names[to_remove], "\n")
       }
     }
   }
@@ -558,7 +594,8 @@ my_unlist <- function(x){
     output$eem_list = DT::renderDataTable(
       metrics,
       server = FALSE,
-      selection = list(mode = 'single', selected = c(1)),
+      selection = 'single',
+      # selection = list(mode = 'single', target = "row", selected = c(1)),
       options = list(
         autoWidth = TRUE,
         columnDefs = list(list(width = '10px', targets = "_all"))
@@ -569,3 +606,38 @@ my_unlist <- function(x){
 
   shiny::shinyApp(ui, server)
 }
+
+
+#' Extract blank EEM
+#'
+#' @template template_eem
+#' @param average Logical. If TRUE blank EEMs will be averaged
+eem_extract_blank <- function(eem, average = TRUE) {
+
+  blank_names <- c("nano", "miliq", "milliq", "mq", "blank")
+
+  blank <- eem_extract(eem, blank_names,
+                       keep = TRUE,
+                       ignore_case = TRUE,
+                       verbose = FALSE)
+
+  # Average all the blank EEMs
+  if(average) {
+
+    n <- length(blank)
+
+    message("A total of ", n, " blank EEMs will be averaged.")
+
+    X <- Reduce("+", lapply(blank, function(x) x$x))
+    X <- X / n
+
+    blank <- blank[1]
+    blank[[1]]$x <- X
+
+    class(blank) <- "eemlist"
+
+  }
+
+  return(blank)
+}
+

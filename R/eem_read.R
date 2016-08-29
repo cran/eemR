@@ -91,6 +91,7 @@ eem_read <- function(file, recursive = FALSE) {
 #' @param x A matrix with fluorescence values.
 #' @param ex Vector of excitation wavelengths.
 #' @param em Vector of emission wavelengths.
+#' @param location Location of the eem file.
 #'
 #' @importFrom tools file_path_sans_ext
 #'
@@ -102,13 +103,19 @@ eem_read <- function(file, recursive = FALSE) {
 #'  \item ex Excitation vector of wavelengths.
 #' }
 
-eem <- function(file, x, ex, em){
+eem <- function(file, x, ex, em, location = NA){
+
+  # Use dirname if location if not provided
+  if (is.na(location)) {
+    location <- dirname(file)
+  }
+
 
   eem <- list(sample = make.names(file_path_sans_ext(basename(file))),
               x = x,
               ex = ex,
               em = em,
-              location =  dirname(file))
+              location =  location)
 
   class(eem) <- "eem"
 
@@ -164,7 +171,7 @@ eem_read_shimadzu <- function(data, file){
   attr(res, "is_scatter_corrected") <- FALSE
   attr(res, "is_ife_corrected") <- FALSE
   attr(res, "is_raman_normalized") <- FALSE
-  attr(res, "manucafturer") <- "Shimadzu"
+  attr(res, "manufacturer") <- "Shimadzu"
 
   message("Shimadzu files do not contain excitation wavelengths.")
   message("Please provide them using the eem_set_wavelengths() function.")
@@ -213,7 +220,7 @@ eem_read_cary <- function(data, file){
   attr(res, "is_scatter_corrected") <- FALSE
   attr(res, "is_ife_corrected") <- FALSE
   attr(res, "is_raman_normalized") <- FALSE
-  attr(res, "manucafturer") <- "Cary Eclipse"
+  attr(res, "manufacturer") <- "Cary Eclipse"
 
   return(res)
 }
@@ -249,7 +256,7 @@ eem_read_aqualog <- function(data, file){
   attr(res, "is_scatter_corrected") <- FALSE
   attr(res, "is_ife_corrected") <- FALSE
   attr(res, "is_raman_normalized") <- FALSE
-  attr(res, "manucafturer") <- "Aqualog"
+  attr(res, "manufacturer") <- "Aqualog"
 
   return(res)
 }

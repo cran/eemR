@@ -4,14 +4,18 @@
 \alias{eem_cut}
 \title{Cut emission and/or excitation wavelengths from EEMs}
 \usage{
-eem_cut(eem, ex, em)
+eem_cut(eem, ex, em, fill_with_na = FALSE)
 }
 \arguments{
 \item{eem}{An object of class \code{eemlist}.}
 
-\item{ex}{A numeric vector with range of excitation wavelengths to be kept.}
+\item{ex}{A numeric vector of excitation wavelengths to be removed.}
 
-\item{em}{A numeric vector with range of emission wavelengths to be kept.}
+\item{em}{A numeric vector of emission wavelengths to be removed.}
+
+\item{fill_with_na}{Logical. If TRUE, fluorescence values at specified
+wavelengths will be replaced with NA. If FALSE, these values will be
+removed.}
 }
 \value{
 An object of class \code{eemlist}.
@@ -27,7 +31,11 @@ eem <- eem_read(file)
 plot(eem)
 
 # Cut few excitation wavelengths
-eem <- eem_cut(eem, ex = c(220, 300), em = c(325, 500))
+eem <- eem_cut(eem, ex = c(220, 225, 230, 230))
+plot(eem)
+
+eem <- eem_read(file)
+eem <- eem_cut(eem, em = 350:400, fill_with_na = TRUE)
 plot(eem)
 }
 
