@@ -1,4 +1,4 @@
-#' Read excitation-emission fluorecence matrix (eem)
+#' Read excitation-emission fluorescence matrix (eem)
 #'
 #' @param file File name or folder containing fluorescence file(s).
 #' @param recursive logical. Should the listing recurse into directories?
@@ -18,7 +18,7 @@
 #'
 #'   \code{eemR} will automatically try to determine from which
 #'   spectrofluorometer the files originate and load the data accordingly. Note
-#'   that EEMs are reshaped so X[1, 1] represents the fluoresence intensity at
+#'   that EEMs are reshaped so X[1, 1] represents the fluorescence intensity at
 #'   X[min(ex), min(em)].
 #'
 #' @importFrom stats na.omit
@@ -51,6 +51,10 @@ eem_read <- function(file, recursive = FALSE) {
 
     if(is_shimadzu(data)){
       return(eem_read_shimadzu(data, file))
+    }
+
+    if(is_fluoromax4(data)){
+      return(eem_read_fluoromax4(data, file))
     }
 
     message("I do not know how to read *** ", basename(file), " ***\n")
@@ -111,7 +115,7 @@ eem <- function(file, x, ex, em, location = NA){
   }
 
 
-  eem <- list(sample = make.names(file_path_sans_ext(basename(file))),
+  eem <- list(sample = file_path_sans_ext(basename(file)),
               x = x,
               ex = ex,
               em = em,
@@ -124,7 +128,7 @@ eem <- function(file, x, ex, em, location = NA){
 
 
 is_cary_eclipse <- function(x) {
-  any(grepl("EX_", x)) ## Need to be more robust
+  any(grepl("EX_", x, ignore.case = TRUE)) ## Need to be more robust
 }
 
 is_aqualog <- function(x) {
@@ -138,6 +142,11 @@ is_shimadzu <- function(x){
   # a bit weak, but works for now
   all(unlist(lapply(x, length)) %in% 2)
 }
+
+is_fluoromax4 <- function(x) {
+  any(grepl("F1", x))
+}
+
 
 # *************************************************************************
 # Function reading Shimadzu .TXT files.
@@ -185,10 +194,10 @@ eem_read_shimadzu <- function(data, file){
 # *************************************************************************
 eem_read_cary <- function(data, file){
 
-  min_col <- 3 # Do not expect fluorescence data when there is less than 3 cols.
+  min_col <- 15 # Do not expect fluorescence data when there is less than 15 cols.
 
   data <- stringr::str_split(data, ",")
-  data[unlist(lapply(data, length)) < 3] <- NULL
+  data[unlist(lapply(data, length)) < min_col] <- NULL
 
   ## Find the probable number of columns
   n_col <- unlist(lapply(data, length))
@@ -196,8 +205,7 @@ eem_read_cary <- function(data, file){
 
   data[lapply(data, length) != expected_col] <- NULL
 
-  ex <- as.numeric(na.omit(stringr::str_match(data[[1]],
-                                              "EX_(\\d{3}.\\d{2})")[, 2]))
+  ex <- as.numeric(na.omit(stringr::str_match(data[[1]], stringr::regex("Ex_(\\d+\\.?\\d*)", ignore_case = TRUE))[, 2]))
 
   data[1:2] <- NULL ## Remove the first 2 header lines
 
@@ -259,4 +267,37 @@ eem_read_aqualog <- function(data, file){
   attr(res, "manufacturer") <- "Aqualog"
 
   return(res)
+}
+
+# *************************************************************************
+# Fonction reading Fluoromax-4 dat files.
+# *************************************************************************
+eem_read_fluoromax4 <- function(data, file) {
+
+  data <- stringr::str_split(data, "\t")
+
+  ## Find the probable number of columns
+  n_col <- unlist(lapply(data, length))
+  expected_col <- as.numeric(names(sort(-table(n_col)))[1])
+  data[lapply(data, length) != expected_col] <- NULL
+
+  data <- suppressWarnings(matrix(as.numeric(unlist(data, use.names = FALSE)), ncol = expected_col, byrow = TRUE))
+
+  ex <- as.vector(na.omit(data[1, ]))
+  em <- as.vector(na.omit(data[, 1]))
+  eem <- data[2:nrow(data), 2:ncol(data)]
+
+  res <- eem(file = file,
+             x = eem,
+             ex = ex,
+             em = em)
+
+  attr(res, "is_blank_corrected") <- FALSE
+  attr(res, "is_scatter_corrected") <- FALSE
+  attr(res, "is_ife_corrected") <- FALSE
+  attr(res, "is_raman_normalized") <- FALSE
+  attr(res, "manufacturer") <- "fluoromax4"
+
+  return(res)
+
 }

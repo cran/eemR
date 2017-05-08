@@ -1,3 +1,23 @@
+# eemR 0.1.5
+
+- Improuved plot visualisation to th esame look and feel as those produced in Matlab with DrEEM.
+
+- Use file name as is for the name of the eem. 
+
+- Reading Cary Eclipse files is more robust at detecting correct excitation wavelengths.
+
+- `eemR` can now read Fluoromax-4 files (#40).
+
+- `eem_cut()` gains a logical argument `exact`. If `TRUE`, only wavelengths matching `em` and/or `ex` will be removed. If `FALSE`, all wavelengths in the range of `em` and/or `ex` will be removed.
+
+- Taking into account cuvette size to calculate the 1.5 threshold proposed by Kothawala when correcting for IFE.
+
+- Inner-filter effect correction factors are now corrected correctly. Because fluorescence is assumed to be measured in 1 cm cuvette, absorbance is now expressed per centimeter.
+
+- Better guessing the number of columns of the fluorescence matrix produced by Cary Eclipse software.
+
+- Fixed many typos.
+
 # eemR 0.1.4
 
 - `eem_extract()` is now more intuitive to use. `remove` argument has been replace by `keep`. If `TRUE`, the specified samples will be returned. If `FALSE`, they will be removed (#37).

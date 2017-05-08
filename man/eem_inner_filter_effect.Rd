@@ -11,11 +11,11 @@ eem_inner_filter_effect(eem, absorbance, pathlength = 1)
 
 \item{absorbance}{A data frame with:
 
-  \describe{ \item{wavelength}{A numeric vector containing wavelenghts.}
+  \describe{ \item{wavelength}{A numeric vector containing wavelengths.}
   \item{...}{One or more numeric vectors containing absorbance spectra.}}}
 
 \item{pathlength}{A numeric value indicating the pathlength (in cm) of the
-cuvette used for fluorescence measurement. Default is 1 (1cm).}
+cuvette used for absorbance measurement. Default is 1 (1cm).}
 }
 \value{
 An object of class \code{eemlist}.
@@ -28,6 +28,12 @@ An object of class \code{eem} containing: \itemize{ \item sample The
 \description{
 Inner-filter effect correction
 }
+\details{
+The inner-filter effect correction procedure is assuming that
+  fluorescence has been measured in 1 cm cuvette. Hence, absorbance will be
+  converted per cm. Note that raw absorbance should be provided (i.e. not
+  expressed by meter).
+}
 \section{Names matching}{
 
 
@@ -39,10 +45,12 @@ Inner-filter effect correction
 \section{Sample dilution}{
 
 
-  Kothawala et al. 2013 have shown that a 2-fold dilution was requiered for
-  sample presenting total absorbance > 1.5. Accordingly, a message will warn
-  the user if total absorbance is greater than this threshold.
+  Kothawala et al. 2013 have shown that a 2-fold dilution was required for
+  sample presenting total absorbance > 1.5 in a 1 cm cuvette. Accordingly, a
+  message will warn the user if total absorbance is greater than this
+  threshold.
 }
+
 \examples{
 library(eemR)
 data("absorbance")
@@ -64,7 +72,7 @@ par(op)
 }
 \references{
 Parker, C. a., & Barnes, W. J. (1957). Some experiments with
-  spectrofluorimeters and filter fluorimeters. The Analyst, 82(978), 606.
+  spectrofluorometers and filter fluorimeters. The Analyst, 82(978), 606.
   \url{http://doi.org/10.1039/an9578200606}
 
   Kothawala, D. N., Murphy, K. R., Stedmon, C. A., Weyhenmeyer, G. A., &
@@ -72,4 +80,3 @@ Parker, C. a., & Barnes, W. J. (1957). Some experiments with
   fluorescence. Limnology and Oceanography: Methods, 11(12), 616-630.
   \url{http://doi.org/10.4319/lom.2013.11.616}
 }
-

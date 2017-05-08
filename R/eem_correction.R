@@ -178,6 +178,7 @@ eem_remove_blank <- function(eem, blank = NA) {
 #'
 #' # Remove the scattering
 #' eem <- eem_remove_scattering(eem = eem, type = "raman", order = 1, width = 10)
+#' eem <- eem_remove_scattering(eem = eem, type = "rayleigh", order = 1, width = 10)
 #'
 #' plot(eem)
 
@@ -269,7 +270,7 @@ eem_remove_scattering <- function(eem, type, order = 1, width = 10){
 #'
 #' @details The normalization procedure consists in dividing all fluorescence
 #'   intensities by the area (integral) of the Raman peak. The peak is located
-#'   at excitation of 350 nm. (ex = 370) betwen 371 nm. and 428 nm in emission
+#'   at excitation of 350 nm. (ex = 370) between 371 nm. and 428 nm in emission
 #'   (371 <= em <= 428). Note that the data is interpolated to make sure that
 #'   fluorescence at em 350 exist.
 #'
@@ -406,12 +407,17 @@ eem_raman_normalisation <- function(eem, blank = NA) {
 #' @template template_eem
 #'
 #' @param pathlength A numeric value indicating the pathlength (in cm) of the
-#'   cuvette used for fluorescence measurement. Default is 1 (1cm).
+#'   cuvette used for absorbance measurement. Default is 1 (1cm).
 #'
 #' @param absorbance A data frame with:
 #'
-#'   \describe{ \item{wavelength}{A numeric vector containing wavelenghts.}
+#'   \describe{ \item{wavelength}{A numeric vector containing wavelengths.}
 #'   \item{...}{One or more numeric vectors containing absorbance spectra.}}
+#'
+#' @details The inner-filter effect correction procedure is assuming that
+#'   fluorescence has been measured in 1 cm cuvette. Hence, absorbance will be
+#'   converted per cm. Note that raw absorbance should be provided (i.e. not
+#'   expressed by meter).
 #'
 #' @section Names matching:
 #'
@@ -421,12 +427,13 @@ eem_raman_normalisation <- function(eem, blank = NA) {
 #'
 #' @section Sample dilution:
 #'
-#'   Kothawala et al. 2013 have shown that a 2-fold dilution was requiered for
-#'   sample presenting total absorbance > 1.5. Accordingly, a message will warn
-#'   the user if total absorbance is greater than this threshold.
+#'   Kothawala et al. 2013 have shown that a 2-fold dilution was required for
+#'   sample presenting total absorbance > 1.5 in a 1 cm cuvette. Accordingly, a
+#'   message will warn the user if total absorbance is greater than this
+#'   threshold.
 #'
 #' @references Parker, C. a., & Barnes, W. J. (1957). Some experiments with
-#'   spectrofluorimeters and filter fluorimeters. The Analyst, 82(978), 606.
+#'   spectrofluorometers and filter fluorimeters. The Analyst, 82(978), 606.
 #'   \url{http://doi.org/10.1039/an9578200606}
 #'
 #'   Kothawala, D. N., Murphy, K. R., Stedmon, C. A., Weyhenmeyer, G. A., &
@@ -465,9 +472,12 @@ eem_inner_filter_effect <- function(eem, absorbance, pathlength = 1) {
             is.numeric(pathlength))
 
   ## It is a list of eems, then call lapply
-  if(.is_eemlist(eem)){
+  if (.is_eemlist(eem)) {
 
-    res <- lapply(eem, eem_inner_filter_effect, absorbance = absorbance)
+    res <- lapply(eem,
+                  eem_inner_filter_effect,
+                  absorbance = absorbance,
+                  pathlength = pathlength)
 
     class(res) <- class(eem)
 
@@ -486,25 +496,25 @@ eem_inner_filter_effect <- function(eem, absorbance, pathlength = 1) {
          call. = FALSE)
   }
 
-  wl <- absorbance[, "wavelength"]
+  wl <- absorbance[["wavelength"]]
 
   if(!all(is_between(range(eem$em), min(wl), max(wl)))){
 
-    stop("absorbance wavelenghts are not in the range of
+    stop("absorbance wavelengths are not in the range of
          emission wavelengths", call. = FALSE)
 
   }
 
   if(!all(is_between(range(eem$ex), min(wl), max(wl)))){
 
-    stop("absorbance wavelenghts are not in the range of
+    stop("absorbance wavelengths are not in the range of
          excitation wavelengths", call. = FALSE)
   }
 
-  spectra <- absorbance[, which(names(absorbance) == eem$sample)]
+  index <- which(names(absorbance) == eem$sample)
 
   ## absorbance spectra not found, we return the uncorected eem
-  if(length(spectra) == 0){
+  if (length(index) == 0) {
 
     warning("Absorbance spectrum for ", eem$sample, " was not found. Returning uncorrected EEM.",
             call. = FALSE)
@@ -512,9 +522,13 @@ eem_inner_filter_effect <- function(eem, absorbance, pathlength = 1) {
     return(eem)
   }
 
+  spectra <- absorbance[[index]]
+
   #---------------------------------------------------------------------
   # Create the ife matrix
   #---------------------------------------------------------------------
+
+  cat(eem$sample, "\n")
 
   # Do not correct if it was already done
   if(attributes(eem)$is_ife_corrected) { return(eem) }
@@ -524,23 +538,27 @@ eem_inner_filter_effect <- function(eem, absorbance, pathlength = 1) {
   ex <- sf(eem$ex)
   em <- sf(eem$em)
 
-  total_absorbance <- sapply(ex, function(x){x + em})
+  # Calculate total absorbance in 1 cm cuvette.
+  # This also assume that the fluorescence has been measured in 1 cm cuvette.
+  total_absorbance <- sapply(ex, function(x){x + em}) / pathlength
 
-  if(max(total_absorbance) > 1.5){
-    cat("Total absorbance is > 1.5 (Atotal = ", max(total_absorbance), ")\n",
-        "A 2-fold dilution is recommended. See ?eem_inner_filter_effect.",
+  max_abs <- max(total_absorbance)
+
+  if (max_abs > 1.5) {
+    cat("Total absorbance is > 1.5 (Atotal = ", max_abs, ")\n",
+        "A 2-fold dilution is recommended. See ?eem_inner_filter_effect.\n",
         sep = "")
   }
 
-  ife_correction_factor <- 10 ^ (-pathlength / 2 * (total_absorbance))
+  ife_correction_factor <- 10 ^ (0.5 * total_absorbance)
 
   cat("Range of IFE correction factors:",
       round(range(ife_correction_factor), digits = 4), "\n")
 
   cat("Range of total absorbance (Atotal) :",
-      round(range(total_absorbance), digits = 4), "\n")
+      round(range(total_absorbance / pathlength), digits = 4), "\n\n")
 
-  x <- eem$x / ife_correction_factor
+  x <- eem$x * ife_correction_factor
 
   ## Construct an eem object.
   res <- eem(

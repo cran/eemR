@@ -20,13 +20,13 @@ This function is used to remove blank from eems which can help
 }
 \details{
 The function will first try to use the provided \code{blank}. If the
-  blank is omited, the function will then try to extract the blank from the
+  blank is omitted, the function will then try to extract the blank from the
   \code{eemlist} object. This is done by looking for sample names containing
   one of these complete or partial strings (ignoring case):
 
   \enumerate{ \item nano \item miliq \item milliq \item mq \item blank }
 
-  Note that if \code{blank} is omited, the function will group the
+  Note that if \code{blank} is omitted, the function will group the
   \code{eemlist} based on file location and will assumes that there is a
   blank sample in each folder. In that context, the blank will be used on
   each sample in the same folder. If more than one blank is found they will
@@ -107,4 +107,3 @@ Murphy, K. R., Stedmon, C. a., Graeber, D., & Bro, R. (2013).
 
   \url{http://xlink.rsc.org/?DOI=c3ay41160e}
 }
-

@@ -1,20 +1,36 @@
-#' @importFrom grDevices colorRampPalette
-#' @importFrom graphics par plot text
+#' @importFrom graphics par plot text filled.contour title
 #' @importFrom viridis viridis
 .plot_eem <- function(x, show_peaks, ...){
 
 
-fields::image.plot(y = x$em,
-             x = x$ex,
-             z = t(x$x),
-             main = paste(x$sample, "\n", attr(x, "manucafturer"), sep = ""),
-             xlab = "Excitation (nm.)",
-             ylab = "Emission (nm.)",
-             legend.lab = "Fluorescence intensity",
-             col = viridis::viridis(256),
-             ...)
+  filled.contour(
+    y = x$em,
+    x = x$ex,
+    z = t(x$x),
+    plot.title = title(
+      main = paste(x$sample, "\n", attr(x, "manucafturer"), sep = ""),
+      xlab = "Excitation (nm.)",
+      ylab = "Emission (nm.)"
+    ),
+    key.title = title("Fluorescence\nintensity"),
+    color.palette = viridis::viridis,
+    nlevels = 7,
+    ...
+  )
+#
+# fields::image.plot(y = x$em,
+#              x = x$ex,
+#              z = t(x$x),
+#              main = paste(x$sample, "\n", attr(x, "manucafturer"), sep = ""),
+#              xlab = "Excitation (nm.)",
+#              ylab = "Emission (nm.)",
+#              legend.lab = "Fluorescence intensity",
+#              col = viridis::viridis(256),
+#              nlevel = 7,
+#
+#              ...)
 
-  if(show_peaks){
+  if (show_peaks) {
 
     coble_ex_peak <- list(b = 275, t = 275, a = 260, m = 312, c = 350)
     coble_em_peak <- list(b = 310, t = 340, a = 420, m = 400, c = 450)
@@ -144,6 +160,9 @@ summary.eemlist <- function(object, ...){
 #' @template template_eem
 #' @param ex A numeric vector of excitation wavelengths to be removed.
 #' @param em A numeric vector of emission wavelengths to be removed.
+#' @param exact Logical. If TRUE, only wavelengths matching \code{em} and/or
+#'   \code{ex} will be removed. If FALSE, all wavelengths in the range of
+#'   \code{em} and/or \code{ex} will be removed.
 #' @param fill_with_na Logical. If TRUE, fluorescence values at specified
 #'   wavelengths will be replaced with NA. If FALSE, these values will be
 #'   removed.
@@ -162,7 +181,7 @@ summary.eemlist <- function(object, ...){
 #' eem <- eem_read(file)
 #' eem <- eem_cut(eem, em = 350:400, fill_with_na = TRUE)
 #' plot(eem)
-eem_cut <- function(eem, ex, em, fill_with_na = FALSE){
+eem_cut <- function(eem, ex, em, exact = TRUE, fill_with_na = FALSE){
 
   stopifnot(
     .is_eemlist(eem) | .is_eem(eem))
@@ -170,7 +189,15 @@ eem_cut <- function(eem, ex, em, fill_with_na = FALSE){
   ## It is a list of eems, then call lapply
   if(.is_eemlist(eem)){
 
-    res <- lapply(eem, eem_cut, ex = ex, em = em, fill_with_na = fill_with_na)
+    res <-
+      lapply(
+        eem,
+        eem_cut,
+        ex = ex,
+        em = em,
+        exact = exact,
+        fill_with_na = fill_with_na
+      )
 
     class(res) <- class(eem)
 
@@ -187,7 +214,13 @@ eem_cut <- function(eem, ex, em, fill_with_na = FALSE){
       all(ex >= 0)
     )
 
-    index <- which(eem$ex %in% ex)
+    if (exact) {
+      index <- which(eem$ex %in% ex)
+    } else {
+      index <- which(is_between(eem$ex,
+                                min(ex, na.rm = TRUE),
+                                max(ex, na.rm = TRUE)))
+    }
 
     if (length(index != 0)) {
 
@@ -209,7 +242,13 @@ eem_cut <- function(eem, ex, em, fill_with_na = FALSE){
       all(em >= 0)
     )
 
-    index <- which(eem$em %in% em)
+    if (exact) {
+      index <- which(eem$em %in% em)
+    } else {
+      index <- which(is_between(eem$em,
+                                min(em, na.rm = TRUE),
+                                max(em, na.rm = TRUE)))
+    }
 
     if (length(index != 0)) {
 
@@ -231,7 +270,7 @@ eem_cut <- function(eem, ex, em, fill_with_na = FALSE){
 
 #' Set Excitation and/or Emission wavelengths
 #'
-#' This function allows to manully specify either excitation or emission vector
+#' This function allows to manually specify either excitation or emission vector
 #' of wavelengths in EEMs. This function is mostly used with spectrophotometers
 #' such as Shimadzu that do not include excitation wavelengths in fluorescence
 #' files.
@@ -302,8 +341,8 @@ eem_set_wavelengths <- function(eem, ex, em){
 #' @param ignore_case Logical, should sample name case should be ignored (TRUE)
 #'   or not (FALSE). Default is FALSE.
 #'
-#' @param verbose Logical determining if removed/extraced eems should be printed
-#'   on screen.
+#' @param verbose Logical determining if removed/extracted eems should be
+#'   printed on screen.
 #'
 #' @details \code{sample} argument can be either numeric or character vector. If
 #'   it is numeric, samples at specified index will be removed.
@@ -524,7 +563,7 @@ my_unlist <- function(x){
                               eem_humification_index(eem, verbose = FALSE),
                               by = "sample")
 
-  metrics[,-1] <-round(metrics[,-1], digits = 2)
+  metrics[,-1] <- round(metrics[,-1], digits = 2)
 
   # nl <- vector(mode = "list", length = length(eem_names(eem)))
   # names(nl) <- eem_names(eem)

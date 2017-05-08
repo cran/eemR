@@ -39,13 +39,14 @@ According to Coble (1996), peaks are defined as follow:
 \section{Interpolation}{
 
 
-  Different excitation and emission wavelenghts are often used to measure
-  EEMs. Hence, it is possible to have mismatchs bewteen measured wavelengths
-  and wavelenghts used to calculate specific metrics. In these circumstances,
+  Different excitation and emission wavelengths are often used to measure
+  EEMs. Hence, it is possible to have mismatchs between measured wavelengths
+  and wavelengths used to calculate specific metrics. In these circumstances,
   EEMs are interpolated using the \code{\link{interp2}} function from the
-  \code{parcma} library. A message warning the user will be prompted
-  if data interpolation is performed.
+  \code{parcma} library. A message warning the user will be prompted if data
+  interpolation is performed.
 }
+
 \examples{
 file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
 eem <- eem_read(file)
@@ -63,4 +64,3 @@ Coble, P. G. (1996). Characterization of marine and terrestrial
 \seealso{
 \link[pracma]{interp2}
 }
-
