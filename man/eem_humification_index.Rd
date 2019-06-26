@@ -39,10 +39,9 @@ The fluorescence humification index (HIX), which compares two
 
 \examples{
 file <- system.file("extdata/cary/scans_day_1/", package = "eemR")
-eem <- eem_read(file)
+eem <- eem_read(file, import_function = "cary")
 
 eem_humification_index(eem)
-
 }
 \references{
 Ohno, T. (2002). Fluorescence Inner-Filtering Correction for

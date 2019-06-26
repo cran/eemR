@@ -38,7 +38,7 @@ Extract EEM samples
 }
 \examples{
 folder <- system.file("extdata/cary/scans_day_1", package = "eemR")
-eems <- eem_read(folder)
+eems <- eem_read(folder, import_function = "cary")
 
 eems
 
@@ -56,5 +56,4 @@ eem_extract(eems, c("s", "2"))
 
 # Remove all samples containing "blank" or "nano"
 eem_extract(eems, c("blank", "nano"))
-
 }

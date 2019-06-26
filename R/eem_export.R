@@ -4,7 +4,7 @@
 #' @param ... One or more object of class \code{eemlist}.
 #'
 #' @details The function exports EEMs into PARAFAC-ready Matlab \code{.mat} file
-#'   usable by the \href{www.models.life.ku.dk/drEEM}{drEEM} toolbox.
+#'   usable by the \href{http://www.models.life.ku.dk/drEEM}{drEEM} toolbox.
 #'
 #' @return A structure named \code{OriginalData} is created and contains:
 #'
@@ -27,20 +27,22 @@
 #' @export
 #' @examples
 #' file <- system.file("extdata/cary/", package = "eemR")
-#' eem <- eem_read(file, recursive = TRUE)
+#' eem <- eem_read(file, recursive = TRUE, import_function = "cary")
 #'
 #' export_to <- paste(tempfile(), ".mat", sep = "")
 #' eem_export_matlab(export_to, eem)
-
-eem_export_matlab <- function(file, ...){
-
+eem_export_matlab <- function(file, ...) {
   eem <- list(...)
 
-  list_classes <- unlist(lapply(eem, function(x) {class(x)}))
+  list_classes <- unlist(lapply(eem, function(x) {
+    class(x)
+  }))
 
-  stopifnot(all(list_classes %in% c("eem", "eemlist")),
-            file.info(dirname(file))$isdir,
-            grepl(".mat", basename(file)))
+  stopifnot(
+    all(list_classes %in% c("eem", "eemlist")),
+    file.info(dirname(file))$isdir,
+    grepl(".mat", basename(file))
+  )
 
   eem <- eem_bind(...)
 
@@ -52,16 +54,18 @@ eem_export_matlab <- function(file, ...){
   #---------------------------------------------------------------------
   nEm <- unique(unlist(lapply(eem, function(x) length(x$em))))
 
-  if(length(nEm) != 1){
+  if (length(nEm) != 1) {
     stop("Length of emission vectors are not the same across all eem.",
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   Em <- mapply(function(x) x$em, eem)
 
-  if(ncol(unique(Em, MARGIN = 2)) != 1){
+  if (ncol(unique(Em, MARGIN = 2)) != 1) {
     stop("Emission vectors are not the same across all eem.",
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   Em <- Em[, 1] ## Just get the first column
@@ -71,16 +75,18 @@ eem_export_matlab <- function(file, ...){
   #---------------------------------------------------------------------
   nEx <- unique(unlist(lapply(eem, function(x) length(x$ex))))
 
-  if(length(nEx) != 1){
+  if (length(nEx) != 1) {
     stop("Length of excitation vectors are not the same across all eem.",
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   Ex <- mapply(function(x) x$ex, eem)
 
-  if(ncol(unique(Ex, MARGIN = 2)) != 1){
+  if (ncol(unique(Ex, MARGIN = 2)) != 1) {
     stop("Exctiation vectors are not the same across all eem.",
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
   Ex <- Ex[, 1] ## Just get the first column
@@ -89,38 +95,42 @@ eem_export_matlab <- function(file, ...){
   # Prepare the 3D X matrix contianing eem sample nSample x nEm x nEx
   #---------------------------------------------------------------------
 
-  ncol = unique(unlist(lapply(eem, function(x) ncol(x$x))))
+  ncol <- unique(unlist(lapply(eem, function(x) ncol(x$x))))
 
-  if(length(ncol) != 1){
+  if (length(ncol) != 1) {
     stop("EEMs do not have all the same number of columns across the dataset.",
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
-  nrow = unique(unlist(lapply(eem, function(x) nrow(x$x))))
+  nrow <- unique(unlist(lapply(eem, function(x) nrow(x$x))))
 
-  if(length(nrow) != 1){
+  if (length(nrow) != 1) {
     stop("EEMs do not have all the same number of rows across the dataset.",
-         call. = FALSE)
+      call. = FALSE
+    )
   }
 
-  X <- simplify2array(lapply(eem, function(x)x$x))
+  X <- simplify2array(lapply(eem, function(x) x$x))
 
   X <- array(aperm(X, c(3, 1, 2)), dim = c(nSample, nEm, nEx))
 
   ## Use PARAFAC "naming" convention
-  OriginalData <- list(X = X,
-                       nEm = nEm,
-                       nEx = nEx,
-                       nSample = nSample,
-                       Ex = Ex,
-                       Em = Em)
+  OriginalData <- list(
+    X = X,
+    nEm = nEm,
+    nEx = nEx,
+    nSample = nSample,
+    Ex = Ex,
+    Em = Em
+  )
 
-  R.matlab::writeMat(file, OriginalData = OriginalData,
-                     sample_names = eem_names(eem))
+  R.matlab::writeMat(file,
+    OriginalData = OriginalData,
+    sample_names = eem_names(eem)
+  )
 
   message("Successfully exported ", nSample, " EEMs to ", file, ".\n")
 
   invisible(OriginalData)
-
 }
-

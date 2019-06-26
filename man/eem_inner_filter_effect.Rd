@@ -31,8 +31,8 @@ Inner-filter effect correction
 \details{
 The inner-filter effect correction procedure is assuming that
   fluorescence has been measured in 1 cm cuvette. Hence, absorbance will be
-  converted per cm. Note that raw absorbance should be provided (i.e. not
-  expressed by meter).
+  converted per cm. Note that absorbance spectra should be provided (i.e. not
+  absorption).
 }
 \section{Names matching}{
 
@@ -56,7 +56,7 @@ library(eemR)
 data("absorbance")
 
 folder <- system.file("extdata/cary/scans_day_1", package = "eemR")
-eems <- eem_read(folder)
+eems <- eem_read(folder, import_function = "cary")
 eems <- eem_extract(eems, "nano") # Remove the blank sample
 
 # Remove scattering (1st order)
@@ -68,7 +68,6 @@ op <- par(mfrow = c(2, 1))
 plot(eems, which = 1)
 plot(eems_corrected, which = 1)
 par(op)
-
 }
 \references{
 Parker, C. a., & Barnes, W. J. (1957). Some experiments with

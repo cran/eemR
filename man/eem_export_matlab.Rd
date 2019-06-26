@@ -28,7 +28,7 @@ Export EEMs to Matlab
 }
 \details{
 The function exports EEMs into PARAFAC-ready Matlab \code{.mat} file
-  usable by the \href{www.models.life.ku.dk/drEEM}{drEEM} toolbox.
+  usable by the \href{http://www.models.life.ku.dk/drEEM}{drEEM} toolbox.
 }
 \section{Known bug in export}{
  \code{eemR} uses \code{R.Matlab} to export the
@@ -41,7 +41,7 @@ The function exports EEMs into PARAFAC-ready Matlab \code{.mat} file
 
 \examples{
 file <- system.file("extdata/cary/", package = "eemR")
-eem <- eem_read(file, recursive = TRUE)
+eem <- eem_read(file, recursive = TRUE, import_function = "cary")
 
 export_to <- paste(tempfile(), ".mat", sep = "")
 eem_export_matlab(export_to, eem)

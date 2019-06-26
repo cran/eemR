@@ -61,13 +61,13 @@ The normalization procedure consists in dividing all fluorescence
 \examples{
 # Open the fluorescence eem
 file <- system.file("extdata/cary/scans_day_1", "sample1.csv", package = "eemR")
-eem <- eem_read(file)
+eem <- eem_read(file, import_function = "cary")
 
 plot(eem)
 
 # Open the blank eem
 file <- system.file("extdata/cary/scans_day_1", "nano.csv", package = "eemR")
-blank <- eem_read(file)
+blank <- eem_read(file, import_function = "cary")
 
 # Do the normalisation
 eem <- eem_raman_normalisation(eem, blank)
@@ -78,7 +78,7 @@ plot(eem)
 Lawaetz, A. J., & Stedmon, C. A. (2009). Fluorescence Intensity Calibration
 Using the Raman Scatter Peak of Water. Applied Spectroscopy, 63(8), 936-940.
 
-\url{http://doi.org/10.1366/000370209788964548}
+\url{https://journals.sagepub.com/doi/10.1366/000370209788964548}
 
 Murphy, K. R., Stedmon, C. a., Graeber, D., & Bro, R. (2013). Fluorescence
 spectroscopy and multi-way techniques. PARAFAC. Analytical Methods, 5(23),

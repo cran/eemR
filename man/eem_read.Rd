@@ -4,12 +4,17 @@
 \alias{eem_read}
 \title{Read excitation-emission fluorescence matrix (eem)}
 \usage{
-eem_read(file, recursive = FALSE)
+eem_read(file, recursive = FALSE, import_function)
 }
 \arguments{
 \item{file}{File name or folder containing fluorescence file(s).}
 
 \item{recursive}{logical. Should the listing recurse into directories?}
+
+\item{import_function}{Either a character or a user-defined function to
+import a single eem. If a character, it should be one of "cary", "aqualog",
+"shimadzu", "fluoromax4". See \code{browseVignettes("eemR")} to learn how to create your own
+import function.}
 }
 \value{
 If \code{file} is a single filename:
@@ -36,5 +41,5 @@ At the moment, Cary Eclipse, Aqualog and Shimadzu EEMs are
 }
 \examples{
 file <- system.file("extdata/cary/scans_day_1/", package = "eemR")
-eems <- eem_read(file, recursive = TRUE)
+eems <- eem_read(file, recursive = TRUE, import_function = "cary")
 }

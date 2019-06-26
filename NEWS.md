@@ -1,6 +1,29 @@
+# eemR 1.0.1
+
+- Fixing file location that was not following when creating eems (#52).
+
+# eemR 1.0.0
+
+## Major changes
+
+`eemR` can use user-defined function to import eems data. A new argument `import_function` in the `eem_read()` function can be used to provide a custom functio to read a speficic eem file format.
+ 
+ ## Bracking changes
+ 
+ Because of the major change of `eem_read()`, existing code will brake. The user still can uses the old importing functions by specifying the spectrofluorometer to use as follows:
+ 
+ - `eem_read(file, import_function = "cary"`
+ - `eem_read(file, import_function = "aqualog"`
+ - `eem_read(file, import_function = "shimadzu"`
+ - `eem_read(file, import_function = "fluoromax4"`
+
+## New features
+ 
+ - New function `eem_peaks()` to extract user-defined fluorescence peaks (#42).
+ 
 # eemR 0.1.5
 
-- Improuved plot visualisation to th esame look and feel as those produced in Matlab with DrEEM.
+- Improved plot visualization to the same look and feel as those produced in Matlab with DrEEM.
 
 - Use file name as is for the name of the eem. 
 
@@ -22,7 +45,7 @@
 
 - `eem_extract()` is now more intuitive to use. `remove` argument has been replace by `keep`. If `TRUE`, the specified samples will be returned. If `FALSE`, they will be removed (#37).
 
-- `eem_cut()` now removes specified wavelenghts instead of keeping them.
+- `eem_cut()` now removes specified wavelengths instead of keeping them.
 
 - `eem_cut()` gains an argument `fill_with_na`. If `TRUE` fluorescence at specified wavelengths will be replaced with `NA` instead of being removed.
 
@@ -50,7 +73,7 @@
 
 - Interactive plot using a simple shiny app. Using `plot(eems, interactive = TRUE)` will lunch a shiny app that allows to interactively browse EEMs contained in `eems`.
 
-- A vignette has been added to the package whic can be viewed using `vignette(topic = "introduction", package = "eemR")`.
+- A vignette has been added to the package which can be viewed using `vignette(topic = "introduction", package = "eemR")`.
 
 - An error will occur if one try to do raman normalization on a blank where scattering bands have been removed.
 

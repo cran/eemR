@@ -25,9 +25,8 @@ files.
 \examples{
 folder <- system.file("extdata/shimadzu", package = "eemR")
 
-eem <- eem_read(folder)
+eem <- eem_read(folder, import_function = "shimadzu")
 eem <- eem_set_wavelengths(eem, ex = seq(230, 450, by = 5))
 
 plot(eem)
-
 }
