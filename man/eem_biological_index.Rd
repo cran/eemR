@@ -27,10 +27,11 @@ The biological fluorescence index (BIX) is calculated by
 
   Different excitation and emission wavelengths are often used to measure
   EEMs. Hence, it is possible to have mismatchs between measured wavelengths
-  and wavelengths used to calculate specific metrics. In these circumstances,
-  EEMs are interpolated using the \code{\link{interp2}} function from the
-  \code{parcma} library. A message warning the user will be prompted if data
-  interpolation is performed.
+  and wavelengths used to calculate specific metrics. In these
+  circumstances, EEMs are interpolated using the
+  \code{\link[pracma]{interp2}} function from the \code{parcma} library. A
+  message warning the user will be prompted if data interpolation is
+  performed.
 }
 
 \examples{
@@ -44,7 +45,7 @@ Huguet, A., Vacher, L., Relexans, S., Saubusse, S., Froidefond,
   J. M., & Parlanti, E. (2009). Properties of fluorescent dissolved organic
   matter in the Gironde Estuary. Organic Geochemistry, 40(6), 706-719.
 
-  \url{http://doi.org/10.1016/j.orggeochem.2009.03.002}
+  \doi{10.1016/j.orggeochem.2009.03.002}
 }
 \seealso{
 \link[pracma]{interp2}

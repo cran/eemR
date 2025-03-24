@@ -15,18 +15,6 @@
     nlevels = 7,
     ...
   )
-  #
-  # fields::image.plot(y = x$em,
-  #              x = x$ex,
-  #              z = t(x$x),
-  #              main = paste(x$sample, "\n", attr(x, "manucafturer"), sep = ""),
-  #              xlab = "Excitation (nm.)",
-  #              ylab = "Emission (nm.)",
-  #              legend.lab = "Fluorescence intensity",
-  #              col = viridis::viridis(256),
-  #              nlevel = 7,
-  #
-  #              ...)
 
   if (show_peaks) {
     coble_ex_peak <- list(b = 275, t = 275, a = 260, m = 312, c = 350)
@@ -55,8 +43,13 @@
 #' eem <- eem_read(folder, import_function = "cary")
 #'
 #' plot(eem, which = 3)
-plot.eemlist <- function(x, which = 1,
-                         interactive = FALSE, show_peaks = FALSE, ...) {
+plot.eemlist <- function(
+  x,
+  which = 1,
+  interactive = FALSE,
+  show_peaks = FALSE,
+  ...
+) {
   stopifnot(which <= length(x))
 
   if (interactive) {
@@ -95,7 +88,7 @@ eem_as_summary <- function(object) {
 #'
 #' print(eem)
 print.eemlist <- function(x, ...) {
-  stopifnot(class(x) == "eemlist")
+  stopifnot(inherits(x, "eemlist"))
 
   df <- lapply(x, eem_as_summary)
   df <- do.call(rbind, df)
@@ -117,7 +110,7 @@ print.eemlist <- function(x, ...) {
 #'
 #' summary(eem)
 summary.eemlist <- function(object, ...) {
-  stopifnot(class(object) == "eemlist")
+  stopifnot(inherits(object, "eemlist"))
 
   df <- lapply(object, eem_as_summary)
   df <- do.call(rbind, df)
@@ -198,8 +191,7 @@ eem_cut <- function(eem, ex, em, exact = TRUE, fill_with_na = FALSE) {
       if (fill_with_na) {
         # eem$ex[index] <- NA
         eem$x[, index] <- NA
-      }
-      else {
+      } else {
         eem$ex <- eem$ex[-index]
         eem$x <- eem$x[, -index]
       }
@@ -226,8 +218,7 @@ eem_cut <- function(eem, ex, em, exact = TRUE, fill_with_na = FALSE) {
       if (fill_with_na) {
         # eem$em[index] <- NA
         eem$x[index, ] <- NA
-      }
-      else {
+      } else {
         eem$em <- eem$em[-index]
         eem$x <- eem$x[-index, ]
       }
@@ -338,12 +329,14 @@ eem_set_wavelengths <- function(eem, ex, em) {
 #' # Remove all samples containing "blank" or "nano"
 #' eem_extract(eems, c("blank", "nano"))
 #' @export
-eem_extract <- function(eem, sample, keep = FALSE, ignore_case = FALSE,
-                        verbose = TRUE) {
-  stopifnot(
-    class(eem) == "eemlist",
-    is.character(sample) | is.numeric(sample)
-  )
+eem_extract <- function(
+  eem,
+  sample,
+  keep = FALSE,
+  ignore_case = FALSE,
+  verbose = TRUE
+) {
+  stopifnot(inherits(eem, "eemlist"), is.character(sample) | is.numeric(sample))
 
   sample_names <- unlist(lapply(eem, function(x) {
     x$sample
@@ -353,7 +346,8 @@ eem_extract <- function(eem, sample, keep = FALSE, ignore_case = FALSE,
   if (is.numeric(sample)) {
     stopifnot(all(is_between(sample, 1, length(eem))))
 
-    to_remove <- ifelse(rep(keep, length(sample)),
+    to_remove <- ifelse(
+      rep(keep, length(sample)),
       setdiff(1:length(eem), sample),
       sample
     )
@@ -363,14 +357,16 @@ eem_extract <- function(eem, sample, keep = FALSE, ignore_case = FALSE,
     if (verbose) {
       cat(
         ifelse(keep, "Extracted sample(s):", "Removed sample(s):"),
-        sample_names[sample], "\n"
+        sample_names[sample],
+        "\n"
       )
     }
   }
 
   ## Regular expression
   if (is.character(sample)) {
-    to_remove <- grepl(paste(sample, collapse = "|"),
+    to_remove <- grepl(
+      paste(sample, collapse = "|"),
       sample_names,
       ignore.case = ignore_case
     )
@@ -380,11 +376,11 @@ eem_extract <- function(eem, sample, keep = FALSE, ignore_case = FALSE,
     if (verbose) {
       if (all(to_remove == FALSE)) {
         cat("Nothing to remove.")
-      }
-      else {
+      } else {
         cat(
           ifelse(keep, "Extracted sample(s):", "Removed sample(s):"),
-          sample_names[to_remove], "\n"
+          sample_names[to_remove],
+          "\n"
         )
       }
     }
@@ -471,7 +467,7 @@ eem_names <- function(eem) {
 #'
 #' eem <- eem_bind(eem, eem)
 eem_bind <- function(...) {
-  eem <- list(...)
+  eem <- c(...)
 
   list_classes <- unlist(lapply(eem, function(x) {
     class(x)
@@ -488,7 +484,7 @@ eem_bind <- function(...) {
 }
 
 my_unlist <- function(x) {
-  if (class(x) == "eem") {
+  if (inherits(x, "eem")) {
     x <- list(x)
 
     class(x) <- "eemlist"
@@ -500,25 +496,28 @@ my_unlist <- function(x) {
 }
 
 .is_eemlist <- function(eem) {
-  ifelse(class(eem) == "eemlist", TRUE, FALSE)
+  inherits(eem, "eemlist")
 }
 
 .is_eem <- function(eem) {
-  ifelse(class(eem) == "eem", TRUE, FALSE)
+  inherits(eem, "eem")
 }
 
 .plot_shiny <- function(eem) {
-  metrics <- dplyr::left_join(eem_coble_peaks(eem, verbose = FALSE),
+  metrics <- dplyr::left_join(
+    eem_coble_peaks(eem, verbose = FALSE),
     eem_biological_index(eem, verbose = FALSE),
     by = "sample"
   )
 
-  metrics <- dplyr::left_join(metrics,
+  metrics <- dplyr::left_join(
+    metrics,
     eem_fluorescence_index(eem, verbose = FALSE),
     by = "sample"
   )
 
-  metrics <- dplyr::left_join(metrics,
+  metrics <- dplyr::left_join(
+    metrics,
     eem_humification_index(eem, verbose = FALSE),
     by = "sample"
   )
@@ -533,20 +532,23 @@ my_unlist <- function(x) {
     shiny::titlePanel("EEM interactive visualization"),
 
     shiny::sidebarLayout(
-      shiny::sidebarPanel
-      (
+      shiny::sidebarPanel(
         shiny::checkboxInput("scale", label = "Keep z-axis fixed?", FALSE),
         shiny::hr(),
         shiny::checkboxInput("by", "Combined 2x2 plots", FALSE),
         shiny::hr(),
-        shiny::sliderInput("ex_cut", "Select excitation range",
+        shiny::sliderInput(
+          "ex_cut",
+          "Select excitation range",
           min = min(eem[[1]]$ex),
           max = max(eem[[1]]$ex),
           value = c(min(eem[[1]]$ex), max(eem[[1]]$ex)),
           step = 1
         ),
         shiny::hr(),
-        shiny::sliderInput("em_cut", "Select emission range",
+        shiny::sliderInput(
+          "em_cut",
+          "Select emission range",
           min = min(eem[[1]]$em),
           max = max(eem[[1]]$em),
           value = c(min(eem[[1]]$em), max(eem[[1]]$em)),
@@ -554,8 +556,11 @@ my_unlist <- function(x) {
         )
       ),
 
-
-      shiny::mainPanel(shiny::plotOutput(outputId = "myeem", width = "550px", height = "550px"))
+      shiny::mainPanel(shiny::plotOutput(
+        outputId = "myeem",
+        width = "550px",
+        height = "550px"
+      ))
     ),
 
     shiny::br(),
@@ -578,7 +583,8 @@ my_unlist <- function(x) {
 
         par(mfrow = c(n, n))
 
-        plot(eem,
+        plot(
+          eem,
           which = input$eem_list_rows_selected,
           xlim = c(input$ex_cut[1], input$ex_cut[2]),
           ylim = c(input$em_cut[1], input$em_cut[2]),
@@ -610,7 +616,9 @@ my_unlist <- function(x) {
 eem_extract_blank <- function(eem, average = TRUE) {
   blank_names <- c("nano", "miliq", "milliq", "mq", "blank")
 
-  blank <- eem_extract(eem, blank_names,
+  blank <- eem_extract(
+    eem,
+    blank_names,
     keep = TRUE,
     ignore_case = TRUE,
     verbose = FALSE

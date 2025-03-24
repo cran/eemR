@@ -13,7 +13,7 @@ msg_warning_wavelength <- function() {
 #'
 #' @template template_section_interp2
 #'
-#' @references \url{http://doi.wiley.com/10.4319/lo.2001.46.1.0038}
+#' @references \doi{https://doi.org/10.4319/lo.2001.46.1.0038}
 #'
 #' @return A data frame containing fluorescence index (FI) for each eem.
 #' @export
@@ -73,7 +73,7 @@ eem_fluorescence_index <- function(eem, verbose = TRUE) {
 #'   DOM in seawater using excitation-emission matrix spectroscopy. Marine
 #'   Chemistry, 51(4), 325-346.
 #'
-#'   \url{http://doi.org/10.1016/0304-4203(95)00062-3}
+#'   \doi{10.1016/0304-4203(95)00062-3}
 #'
 #' @examples
 #' file <- system.file("extdata/cary/scans_day_1/", "sample1.csv", package = "eemR")
@@ -104,18 +104,27 @@ eem_coble_peaks <- function(eem, verbose = TRUE) {
   t <- pracma::interp2(eem$ex, eem$em, eem$x, 275, 340)
 
   a <- max(pracma::interp2(
-    eem$ex, eem$em, eem$x,
-    rep(260, length(380:460)), 380:460
+    eem$ex,
+    eem$em,
+    eem$x,
+    rep(260, length(380:460)),
+    380:460
   ))
 
   m <- max(pracma::interp2(
-    eem$ex, eem$em, eem$x,
-    rep(312, length(380:420)), 380:420
+    eem$ex,
+    eem$em,
+    eem$x,
+    rep(312, length(380:420)),
+    380:420
   ))
 
   c <- max(pracma::interp2(
-    eem$ex, eem$em, eem$x,
-    rep(350, length(420:480)), 420:480
+    eem$ex,
+    eem$em,
+    eem$x,
+    rep(350, length(420:480)),
+    420:480
   ))
 
   #--------------------------------------------
@@ -171,8 +180,14 @@ eem_peaks <- function(eem, ex, em, verbose = TRUE) {
     return(res)
   }
 
-  assertthat::assert_that(all(dplyr::between(ex, range(eem$ex)[1], range(eem$ex)[2])), msg = "Excitation values are not within the range of excitation values of the EEM.")
-  assertthat::assert_that(all(dplyr::between(em, range(eem$em)[1], range(eem$em)[2])), msg = "Emission values are not within the range of emission values of the EEM.")
+  assertthat::assert_that(
+    all(dplyr::between(ex, range(eem$ex)[1], range(eem$ex)[2])),
+    msg = "Excitation values are not within the range of excitation values of the EEM."
+  )
+  assertthat::assert_that(
+    all(dplyr::between(em, range(eem$em)[1], range(eem$em)[2])),
+    msg = "Emission values are not within the range of emission values of the EEM."
+  )
 
   peak_intensity <- purrr::map2(ex, em, function(ex, em) {
     pracma::interp2(eem$ex, eem$em, eem$x, ex, em)
@@ -206,7 +221,7 @@ eem_peaks <- function(eem, ex, em, verbose = TRUE) {
 #'   Determining the Humification Index of Dissolved Organic Matter.
 #'   Environmental Science & Technology, 36(4), 742-746.
 #'
-#'   \url{http://doi.org/10.1021/es0155276}
+#'   \doi{10.1021/es0155276}
 #'
 #' @return A data frame containing the humification index (HIX) for each eem.
 #' @export
@@ -241,15 +256,27 @@ eem_humification_index <- function(eem, scale = FALSE, verbose = TRUE) {
   em_300_345 <- seq(from = 300, to = 345, by = 1)
   ex_254 <- rep(254, length(em_300_345))
 
-  sum_em_435_480 <- sum(pracma::interp2(
-    eem$ex, eem$em, eem$x,
-    ex_254, em_435_480
-  ))
+  sum_em_435_480 <- sum(
+    pracma::interp2(
+      eem$ex,
+      eem$em,
+      eem$x,
+      ex_254,
+      em_435_480
+    ),
+    na.rm = TRUE
+  )
 
-  sum_em_300_345 <- sum(pracma::interp2(
-    eem$ex, eem$em, eem$x,
-    ex_254, em_300_345
-  ))
+  sum_em_300_345 <- sum(
+    pracma::interp2(
+      eem$ex,
+      eem$em,
+      eem$x,
+      ex_254,
+      em_300_345
+    ),
+    na.rm = TRUE
+  )
 
   if (scale) {
     hix <- sum_em_435_480 / (sum_em_300_345 + sum_em_435_480)
@@ -275,7 +302,7 @@ eem_humification_index <- function(eem, scale = FALSE, verbose = TRUE) {
 #'   J. M., & Parlanti, E. (2009). Properties of fluorescent dissolved organic
 #'   matter in the Gironde Estuary. Organic Geochemistry, 40(6), 706-719.
 #'
-#'   \url{http://doi.org/10.1016/j.orggeochem.2009.03.002}
+#'   \doi{10.1016/j.orggeochem.2009.03.002}
 #'
 #' @return A data frame containing the biological index (BIX) for each eem.
 #' @export

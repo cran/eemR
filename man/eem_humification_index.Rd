@@ -31,10 +31,11 @@ The fluorescence humification index (HIX), which compares two
 
   Different excitation and emission wavelengths are often used to measure
   EEMs. Hence, it is possible to have mismatchs between measured wavelengths
-  and wavelengths used to calculate specific metrics. In these circumstances,
-  EEMs are interpolated using the \code{\link{interp2}} function from the
-  \code{parcma} library. A message warning the user will be prompted if data
-  interpolation is performed.
+  and wavelengths used to calculate specific metrics. In these
+  circumstances, EEMs are interpolated using the
+  \code{\link[pracma]{interp2}} function from the \code{parcma} library. A
+  message warning the user will be prompted if data interpolation is
+  performed.
 }
 
 \examples{
@@ -48,7 +49,7 @@ Ohno, T. (2002). Fluorescence Inner-Filtering Correction for
   Determining the Humification Index of Dissolved Organic Matter.
   Environmental Science & Technology, 36(4), 742-746.
 
-  \url{http://doi.org/10.1021/es0155276}
+  \doi{10.1021/es0155276}
 }
 \seealso{
 \link[pracma]{interp2}

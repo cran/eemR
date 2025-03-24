@@ -41,10 +41,11 @@ According to Coble (1996), peaks are defined as follow:
 
   Different excitation and emission wavelengths are often used to measure
   EEMs. Hence, it is possible to have mismatchs between measured wavelengths
-  and wavelengths used to calculate specific metrics. In these circumstances,
-  EEMs are interpolated using the \code{\link{interp2}} function from the
-  \code{parcma} library. A message warning the user will be prompted if data
-  interpolation is performed.
+  and wavelengths used to calculate specific metrics. In these
+  circumstances, EEMs are interpolated using the
+  \code{\link[pracma]{interp2}} function from the \code{parcma} library. A
+  message warning the user will be prompted if data interpolation is
+  performed.
 }
 
 \examples{
@@ -58,7 +59,7 @@ Coble, P. G. (1996). Characterization of marine and terrestrial
   DOM in seawater using excitation-emission matrix spectroscopy. Marine
   Chemistry, 51(4), 325-346.
 
-  \url{http://doi.org/10.1016/0304-4203(95)00062-3}
+  \doi{10.1016/0304-4203(95)00062-3}
 }
 \seealso{
 \link[pracma]{interp2}

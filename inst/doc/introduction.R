@@ -1,4 +1,4 @@
-## ----setup, warning=FALSE, message=FALSE, echo=FALSE---------------------
+## ----setup, warning=FALSE, message=FALSE, echo=FALSE--------------------------
 library(ggplot2)
 library(dplyr)
 library(tidyr)
@@ -49,15 +49,18 @@ df$em_rayleigh <- df$em_raw
 df$em_rayleigh[df$em > 375] <- NA
 
 ggplot(df, aes(x = em)) +
-  geom_line(aes(y = em_rayleigh, color = "Rayleigh scattering"),
+  geom_line(
+    aes(y = em_rayleigh, color = "Rayleigh scattering"),
     size = 0.75,
     na.rm = TRUE
   ) +
-  geom_line(aes(y = em_raman, color = "Raman scattering"),
+  geom_line(
+    aes(y = em_raman, color = "Raman scattering"),
     size = 0.75,
     na.rm = TRUE
   ) +
-  geom_line(aes(y = em_cor, color = "Fluorescence signal"),
+  geom_line(
+    aes(y = em_cor, color = "Fluorescence signal"),
     size = 0.75,
     na.rm = TRUE
   ) +
@@ -74,7 +77,7 @@ ggplot(df, aes(x = em)) +
 ## ----fig3, echo = FALSE, message=FALSE, dev='png', fig.align='center', fig.width=7, fig.height=5, fig.cap = 'Surface plot of an EEM with first order of Raman and Rayleigh scattering removed. Missing values (`NA`) have been placed in both diagonals using a bandwidth of 10 nm.', results="hide"----
 
 file <- system.file("extdata/cary/scans_day_1/", "sample3.csv",
-  package = "eemR"
+package = "eemR"
 )
 
 eem <- eem_read(file, recursive = FALSE, import_function = "cary")
@@ -89,94 +92,94 @@ eem_scatter_removed <- eem_inner_filter_effect(eem, absorbance, 1)
 load("ife.rda")
 
 jet.colors <- colorRampPalette(c(
-  "#00007F",
-  "blue",
-  "#007FFF",
-  "cyan",
-  "#7FFF7F",
-  "yellow",
-  "#FF7F00",
-  "red",
-  "#7F0000"
+"#00007F",
+"blue",
+"#007FFF",
+"cyan",
+"#7FFF7F",
+"yellow",
+"#FF7F00",
+"red",
+"#7F0000"
 ))
 
 par(mfrow = c(2, 2), mar = c(4, 4, 1, 2) + 0.1, oma = c(0, 0, 0, 2))
 
 plot3D::image2D(
-  y = eem[[1]]$em,
+y = eem[[1]]$em,
   x = eem[[1]]$ex,
-  z = t(eem[[1]]$x),
-  xlab = "Excitation (nm.)",
-  ylab = "Emission (nm.)",
-  legend.lab = "IFE correction factors",
-  col = jet.colors(255)
+z = t(eem[[1]]$x),
+xlab = "Excitation (nm.)",
+ylab = "Emission (nm.)",
+legend.lab = "IFE correction factors",
+col = jet.colors(255)
 )
 
 legend("topleft",
-  expression(bold("A")),
-  text.font = 1,
-  cex = 1.5,
-  bty = "n",
-  adj = c(1.5, 0.25)
+expression(bold("A")),
+text.font = 1,
+cex = 1.5,
+bty = "n",
+adj = c(1.5, 0.25)
 )
-
 
 plot(absorbance$wavelength,
   absorbance$sample3,
-  type = "l",
-  lwd = 2,
-  col = "red",
-  xlab = "Wavelength (nm)",
-  ylab = "Absorbance"
+type = "l",
+lwd = 2,
+col = "red",
+xlab = "Wavelength (nm)",
+ylab = "Absorbance"
 )
 
 legend("topleft",
-  expression(bold("B")),
-  text.font = 1,
-  cex = 1.5,
-  bty = "n",
-  adj = c(1.5, 0.25)
+expression(bold("B")),
+text.font = 1,
+cex = 1.5,
+bty = "n",
+adj = c(1.5, 0.25)
 )
 
 plot3D::image2D(
-  y = eem[[1]]$em,
+y = eem[[1]]$em,
   x = eem[[1]]$ex,
-  z = t(ife),
-  xlab = "Excitation (nm.)",
-  ylab = "Emission (nm.)",
-  legend.lab = "IFE correction factors",
-  col = rev(jet.colors(255))
+z = t(ife),
+xlab = "Excitation (nm.)",
+ylab = "Emission (nm.)",
+legend.lab = "IFE correction factors",
+col = rev(jet.colors(255))
 )
 
 legend("topleft",
-  expression(bold("C")),
-  text.font = 1,
-  cex = 1.5,
-  bty = "n",
-  adj = c(1.5, 0.25)
+expression(bold("C")),
+text.font = 1,
+cex = 1.5,
+bty = "n",
+adj = c(1.5, 0.25)
 )
 
 plot3D::image2D(
-  y = eem_scatter_removed[[1]]$em,
+y = eem_scatter_removed[[1]]$em,
   x = eem_scatter_removed[[1]]$ex,
-  z = t(eem_scatter_removed[[1]]$x),
-  xlab = "Excitation (nm.)",
-  ylab = "Emission (nm.)",
-  legend.lab = "IFE correction factors",
-  col = jet.colors(255)
+z = t(eem_scatter_removed[[1]]$x),
+xlab = "Excitation (nm.)",
+ylab = "Emission (nm.)",
+legend.lab = "IFE correction factors",
+col = jet.colors(255)
 )
 
 legend("topleft",
-  expression(bold("D")),
-  text.font = 1,
-  cex = 1.5,
-  bty = "n",
-  adj = c(1.5, 0.25)
+expression(bold("D")),
+text.font = 1,
+cex = 1.5,
+bty = "n",
+adj = c(1.5, 0.25)
 )
+
 
 ## ----fig4, echo = FALSE, warning=FALSE, dev="png", fig.width = 7, fig.align="center", fig.cap = "IFE correction process. Panel (A) shows an uncorrected EEM (the color bar is the florescence intensity in A.U.). Panel (B) is the corresponding absorbance spectra measured on the same sample. Panel (C) shows the IFE correction factors corresponding to the values of the denominator in Equation (@ife) with values close to 1 indicating less pronounced correction. Panel (D) shows the corrected sample (the color bar is the fluorescence intensity in A.U.)."----
 
-load("blank.rda")
+load(here::here("vignettes/blank.rda"))
 
 raman <- blank[[1]]$x[, which(blank[[1]]$ex == 350)]
 
@@ -198,24 +201,24 @@ ggplot(df, aes(x = em, y = raman)) +
     size = 3
   )
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 library(eemR)
 ls("package:eemR")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 file <- system.file("extdata/cary/scans_day_1", package = "eemR")
 eems <- eem_read(file, import_function = "cary")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 summary(eems)
 
-## ---- eval = FALSE-------------------------------------------------------
-#  plot(eems, which = 3)
+## ----eval = FALSE-------------------------------------------------------------
+# plot(eems, which = 3)
 
-## ---- eval = FALSE-------------------------------------------------------
-#  plot(eems, interactive = TRUE)
+## ----eval = FALSE-------------------------------------------------------------
+# plot(eems, interactive = TRUE)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 file <- system.file("extdata/cary/scans_day_1", "nano.csv", package = "eemR")
 blank <- eem_read(file, import_function = "cary")
 
@@ -228,14 +231,14 @@ eems <- eem_remove_scattering(eems, "rayleigh", 1, 10) %>%
 
 plot(eems, which = 3)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 data("absorbance")
 head(absorbance)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 eem_names(eems)
 
-## ---- fig.keep="none"----------------------------------------------------
+## ----fig.keep="none"----------------------------------------------------------
 eems <- eem_inner_filter_effect(
   eem = eems,
   absorbance = absorbance,
@@ -244,38 +247,38 @@ eems <- eem_inner_filter_effect(
 
 plot(eems, which = 3)
 
-## ---- fig.keep="none"----------------------------------------------------
+## ----fig.keep="none"----------------------------------------------------------
 eems <- eem_raman_normalisation(eems, blank)
 
 plot(eems, which = 3)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 summary(eems)
 
-## ---- eval=FALSE---------------------------------------------------------
-#  eem_export_matlab("myfile.mat", eems)
+## ----eval=FALSE---------------------------------------------------------------
+# eem_export_matlab("myfile.mat", eems)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 file <- system.file("extdata/cary/scans_day_1", package = "eemR")
 eems <- eem_read(file, import_function = "cary")
 
 eem_coble_peaks(eems, verbose = FALSE)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 eem_fluorescence_index(eems, verbose = FALSE)
 
 eem_humification_index(eems, verbose = FALSE)
 
 eem_biological_index(eems, verbose = FALSE)
 
-## ---- eval=FALSE---------------------------------------------------------
-#  library(magrittr)
-#  
-#  file <- system.file("extdata/cary/scans_day_1/", package = "eemR")
-#  file %>%
-#    eem_read(recursive = TRUE, import_function = "cary") %>%
-#    eem_raman_normalisation() %>%
-#    eem_remove_scattering(type = "raman", order = 1, width = 10) %>%
-#    eem_remove_scattering(type = "rayleigh", order = 1, width = 10) %>%
-#    plot(2)
+## ----eval=FALSE---------------------------------------------------------------
+# library(magrittr)
+# 
+# file <- system.file("extdata/cary/scans_day_1/", package = "eemR")
+# file %>%
+#   eem_read(recursive = TRUE, import_function = "cary") %>%
+#   eem_raman_normalisation() %>%
+#   eem_remove_scattering(type = "raman", order = 1, width = 10) %>%
+#   eem_remove_scattering(type = "rayleigh", order = 1, width = 10) %>%
+#   plot(2)
 
